@@ -287,9 +287,21 @@ function renderFeed(items) {
       <div class="prod">
         <img src="${p.product.image_url}" alt="" />
         <div class="pm"><div class="pt">${p.product.title}</div><div class="pp">₩${p.product.price.toLocaleString()} · ${p.product.brand}</div></div>
-        <button onclick="toast('구매 링크로 이동 (제휴 수수료 발생 지점)')">구매</button>
+        <button onclick="buyProduct('${p.product.product_url || ''}', '${p.product.id}')">구매</button>
       </div>` : ""}
     </div>`).join("");
+}
+
+// 구매하러 가기 — 연동 쇼핑몰(무신사) 실제 상품 페이지로 이동 + 전환 이벤트 기록
+function buyProduct(url, productId) {
+  api("/events", {method:"POST", body:JSON.stringify({
+    type: "purchase_click", session_id: "webdemo", payload: { product_id: productId },
+  })}).catch(()=>{});
+  if (url && !url.includes("partner-shop.example")) {
+    window.open(url, "_blank");
+  } else {
+    toast("이 상품은 아직 판매 링크가 연결되지 않았어요");
+  }
 }
 
 async function vote(postId, choice) {
