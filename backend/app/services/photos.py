@@ -18,6 +18,30 @@ from app.services.admin_alerts import notify_admin
 from app.storage.base import get_storage
 
 
+# 모더레이션 카테고리 → 사용자 안내용 한글 사유
+_GUIDELINE_KO = {
+    "sexual": "선정적·성적 콘텐츠",
+    "sexual/minors": "미성년자 관련 성적 콘텐츠",
+    "violence": "폭력적인 장면",
+    "violence/graphic": "유혈·잔혹한 장면",
+    "self-harm": "자해 관련 콘텐츠",
+    "self_harm": "자해 관련 콘텐츠",
+    "harassment": "괴롭힘·모욕적 콘텐츠",
+    "hate": "혐오 표현",
+}
+
+
+def _guideline_reasons(categories: list[str]) -> str:
+    """카테고리 코드를 사용자에게 보여줄 사유 문구로 변환 (중복 제거, 순서 유지)."""
+    seen: list[str] = []
+    for category in categories:
+        base = category.split("/")[0].replace("_", "-")
+        label = _GUIDELINE_KO.get(category) or _GUIDELINE_KO.get(base)
+        if label and label not in seen:
+            seen.append(label)
+    return ", ".join(seen) or "부적절한 콘텐츠"
+
+
 class PhotoService:
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -83,7 +107,8 @@ class PhotoService:
             )
         if verdict.flagged:
             banned = await self._register_violation(user_id, verdict.categories)
-            message = "커뮤니티 가이드라인에 맞지 않는 이미지입니다."
+            reasons = _guideline_reasons(verdict.categories)
+            message = f"커뮤니티 가이드라인 위반으로 사진을 사용할 수 없어요 (사유: {reasons})."
             if banned:
                 message += " 반복 위반으로 계정이 제한되었습니다."
             raise InvalidPhotoError(

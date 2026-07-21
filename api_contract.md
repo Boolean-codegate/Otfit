@@ -233,8 +233,7 @@ req: `{ "content": "…" }` (1~300자) → res 201: `{Comment}`
 
 ### POST /posts/{id}/vote  (auth)
 req: `{ "choice": "buy" | "skip" }` — 재투표 시 선택 변경, 같은 선택은 멱등.
-res 200: `{ "post": {Post}, "reward_credits": 1 }`
-- 보상: **타인 게시물 신규 투표**에 한해 하루 3회까지 +1 크레딧 (리텐션 루프)
+res 200: `{ "post": {Post}, "reward_credits": 0 }`  // 보상 제도 폐지 — 호환을 위해 필드 유지(항상 0)
 
 ## 11. 마이페이지
 

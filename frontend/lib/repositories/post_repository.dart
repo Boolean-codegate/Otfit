@@ -31,7 +31,7 @@ abstract class PostRepository {
     bool removeBefore = false,
   });
 
-  /// 재투표 시 선택 변경, 같은 선택은 멱등. 타인 게시물 신규 투표는 +1 크레딧(하루 3회).
+  /// 재투표 시 선택 변경, 같은 선택은 멱등.
   Future<VoteResult> vote({required String postId, required String choice});
 
   Future<List<PostComment>> fetchComments(String postId);
@@ -81,7 +81,6 @@ class MockPostRepository implements PostRepository {
   final Map<String, List<PostComment>> _comments = {};
   int _sequence = 2;
   int _commentSequence = 0;
-  int _rewardsToday = 0;
 
   @override
   Future<List<FeedPlatform>> fetchPlatforms() async => const [
@@ -155,7 +154,6 @@ class MockPostRepository implements PostRepository {
     if (post.myVote == choice) {
       return VoteResult(post: post, rewardCredits: 0);
     }
-    final isNewVote = post.myVote == null;
     final updated = post.copyWith(
       buyVotes: post.buyVotes +
           (choice == 'buy' ? 1 : 0) -
@@ -166,9 +164,8 @@ class MockPostRepository implements PostRepository {
       myVote: choice,
     );
     _posts[index] = updated;
-    final reward = isNewVote && _rewardsToday < 3 ? 1 : 0;
-    _rewardsToday += reward;
-    return VoteResult(post: updated, rewardCredits: reward);
+    // 투표 크레딧 보상 제도 폐지
+    return VoteResult(post: updated, rewardCredits: 0);
   }
 
   @override

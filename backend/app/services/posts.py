@@ -1,8 +1,4 @@
-"""SNS 피드 — 비포/애프터 '이거 어때요?' 투표.
-
-리텐션 루프: 투표 참여(타인 게시물, 하루 VOTE_REWARD_DAILY_LIMIT회)에 크레딧을 지급해
-투표 → 크레딧 → 보정 → 게시 → 재방문의 순환을 만든다.
-"""
+"""SNS 피드 — 비포/애프터 '이거 어때요?' 투표."""
 import uuid
 
 from sqlalchemy import func, select
@@ -12,11 +8,6 @@ from app.core.errors import AppError, NotFoundError
 from app.models import GenerationJob, GenerationResult, Partner, Photo, Post, PostComment, Product, User
 from app.repositories.posts import PostRepository
 from app.schemas.post import CommentOut, PostCreate, PostOut, PostUpdate
-from app.services.credits import CreditService
-
-VOTE_REWARD_CREDITS = 1
-VOTE_REWARD_DAILY_LIMIT = 3
-
 
 class PostService:
     def __init__(self, session: AsyncSession):
@@ -130,16 +121,12 @@ class PostService:
         if post is None:
             raise NotFoundError("게시물을 찾을 수 없습니다.")
 
+        # 투표 크레딧 보상 제도는 폐지 — reward_credits는 호환을 위해 항상 0
         reward = 0
         existing = await self.posts.get_vote(post_id, user.id)
         if existing is None:
-            # 신규 투표 — 보상은 '타인 게시물 + 일일 한도 내'일 때만
-            votes_today = await self.posts.count_votes_today(user.id)
             await self.posts.add_vote(post_id, user.id, choice)
             self._bump(post, choice, +1)
-            if post.user_id != user.id and votes_today < VOTE_REWARD_DAILY_LIMIT:
-                reward = VOTE_REWARD_CREDITS
-                await CreditService(self.session).grant(user.id, reward, "vote_reward")
         elif existing.choice != choice:
             # 재투표 = 선택 변경 (보상 없음)
             self._bump(post, existing.choice, -1)

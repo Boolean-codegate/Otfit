@@ -113,7 +113,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 8),
                   Center(
                     child: Text(
-                      '사진을 보정하다가, 사고 싶어진다',
+                      '옷, 나답게, 핏하게.',
                       style: textTheme.bodySmall?.copyWith(
                         color: AppColors.secondaryText,
                       ),
