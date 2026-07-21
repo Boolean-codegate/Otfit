@@ -24,6 +24,14 @@ res 201: `{ "user": {User}, "access_token": "…", "refresh_token": "…" }`
 req: `{ "email": "a@b.com", "password": "…" }`
 res 200: `{ "user": {User}, "access_token": "…", "refresh_token": "…" }`
 
+### POST /auth/social
+카카오/구글 SDK로 받은 토큰을 서버가 검증해 로그인. 미가입 사용자는 자동 가입.
+req: `{ "provider": "kakao" | "google", "token": "…" }`
+  - kakao → SDK의 **access_token**, google → SDK의 **id_token**
+res 200(기존 사용자) / 201(신규 가입, 보너스 크레딧 지급): `{ "user": {User}, "access_token": "…", "refresh_token": "…" }`
+에러: 토큰 무효 `401 UNAUTHORIZED`, 이미 다른 소셜과 연결된 이메일 `409 CONFLICT`
+참고: 같은 이메일의 기존 이메일 가입 계정이 있으면 소셜 계정이 자동 연결됨. 카카오가 이메일 미제공 시 `kakao_<id>@social.otfit.app` 형태의 플레이스홀더 이메일 사용.
+
 ### POST /auth/refresh
 req: `{ "refresh_token": "…" }`
 res 200: `{ "access_token": "…", "refresh_token": "…" }`

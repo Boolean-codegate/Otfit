@@ -21,8 +21,28 @@ class UserRepository:
         result = await self.session.execute(select(User).where(User.email == email))
         return result.scalar_one_or_none()
 
-    async def create(self, *, email: str, hashed_password: str, nickname: str) -> User:
-        user = User(email=email, hashed_password=hashed_password, nickname=nickname)
+    async def get_by_provider(self, provider: str, provider_id: str) -> User | None:
+        result = await self.session.execute(
+            select(User).where(User.provider == provider, User.provider_id == provider_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def create(
+        self,
+        *,
+        email: str,
+        hashed_password: str | None,
+        nickname: str,
+        provider: str = "email",
+        provider_id: str | None = None,
+    ) -> User:
+        user = User(
+            email=email,
+            hashed_password=hashed_password,
+            nickname=nickname,
+            provider=provider,
+            provider_id=provider_id,
+        )
         self.session.add(user)
         await self.session.flush()
         return user

@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -19,6 +20,13 @@ class LoginRequest(BaseModel):
 
 class RefreshRequest(BaseModel):
     refresh_token: str
+
+
+class SocialLoginRequest(BaseModel):
+    """kakao: SDK의 access_token / google: SDK의 id_token"""
+
+    provider: Literal["kakao", "google"]
+    token: str = Field(min_length=1)
 
 
 class UserOut(ORMModel):
