@@ -1,7 +1,7 @@
 # 빌드 컨텍스트 = 레포 루트 (Cloudtype: -f frontend/Dockerfile .)
 # 1단계: Flutter 웹 릴리즈 빌드 (API 주소·DEV 로그인은 빌드 시점에 박힘)
-# pubspec이 Dart ^3.12.2 요구 → Flutter 3.44.7(Dart 3.12.2)로 고정 (stable 태그는 뒤처질 수 있음)
-FROM ghcr.io/cirruslabs/flutter:3.44.7 AS build
+# cirruslabs 최신 배포 태그 3.44.0(Dart 3.12.0)으로 고정 — pubspec sdk 하한도 ^3.12.0
+FROM ghcr.io/cirruslabs/flutter:3.44.0 AS build
 
 WORKDIR /app
 COPY frontend/ .
