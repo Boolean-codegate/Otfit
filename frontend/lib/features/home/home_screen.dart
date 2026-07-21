@@ -89,12 +89,17 @@ class HomeScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  '오늘은 어떤 스타일을\n입어볼까요?',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: AppColors.mainText,
-                    fontWeight: FontWeight.w800,
-                    height: 1.25,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '오늘은 어떤 스타일을 입어볼까요?',
+                    maxLines: 1,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: AppColors.mainText,
+                      fontWeight: FontWeight.w800,
+                      height: 1.25,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 9),
