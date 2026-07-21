@@ -527,6 +527,78 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
     }
   }
 
+  /// 상세 안에서 바로 수정 — 캡션 + 비포 공개 여부.
+  Future<void> _edit() async {
+    final captionController = TextEditingController(text: _post.caption);
+    final hadBefore = _post.beforeUrl != null;
+    var includeBefore = hadBefore;
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            20, 20, 20, 20 + MediaQuery.of(sheetContext).viewInsets.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('게시물 수정하기',
+                  style: Theme.of(sheetContext).textTheme.titleLarge),
+              const SizedBox(height: 12),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: includeBefore,
+                onChanged: (value) =>
+                    setSheetState(() => includeBefore = value),
+                title: const Text('비포 사진 함께 공개'),
+                subtitle: Text(
+                  '비포 → 애프터 변신을 보여줘요 ✨',
+                  style: Theme.of(sheetContext).textTheme.bodySmall,
+                ),
+              ),
+              TextField(
+                controller: captionController,
+                maxLength: 300,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  hintText: '이 옷 어때요? 살까 말까 물어보세요 🙋',
+                ),
+              ),
+              const SizedBox(height: 8),
+              FilledButton(
+                onPressed: () => Navigator.of(sheetContext).pop(true),
+                child: const Text('수정하기'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (saved != true || !mounted) return;
+    try {
+      final updated = await ref.read(postRepositoryProvider).updatePost(
+            postId: _post.id,
+            caption: captionController.text.trim(),
+            includeBefore: includeBefore && !hadBefore,
+            removeBefore: !includeBefore && hadBefore,
+          );
+      setState(() => _post = updated);
+      ref.invalidate(userPostsProvider(widget.userId));
+      ref.invalidate(feedProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('게시물을 수정했어요!')));
+      }
+    } on Object catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('수정 실패: $error')));
+      }
+    }
+  }
+
   /// 게시할 때 비포를 안 붙였어도, 연결된 피팅 결과의 원본 사진으로 나중에 추가할 수 있다.
   Future<void> _addBefore() async {
     try {
@@ -596,13 +668,19 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                     style: textTheme.titleMedium
                         ?.copyWith(fontWeight: FontWeight.w800)),
                 const Spacer(),
-                if (widget.isMine)
+                if (widget.isMine) ...[
+                  IconButton(
+                    tooltip: '수정',
+                    icon: const Icon(Icons.edit_outlined),
+                    onPressed: _edit,
+                  ),
                   IconButton(
                     tooltip: '삭제',
                     icon: const Icon(Icons.delete_outline,
                         color: AppColors.error),
                     onPressed: _delete,
                   ),
+                ],
                 IconButton(
                   icon: const Icon(Icons.close_rounded),
                   onPressed: () => Navigator.of(context).pop(),
