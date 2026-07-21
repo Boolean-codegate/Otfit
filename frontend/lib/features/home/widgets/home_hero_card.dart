@@ -67,7 +67,7 @@ class HomeHeroCard extends StatelessWidget {
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      '사기 전에, 입어보다.',
+                      '옷, 나답게, 핏하게.',
                       maxLines: 1,
                       style: textTheme.headlineMedium?.copyWith(
                         color: AppColors.surface,
