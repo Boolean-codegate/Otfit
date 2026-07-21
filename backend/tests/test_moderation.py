@@ -58,6 +58,31 @@ async def test_repeated_unsafe_uploads_ban_account(client, monkeypatch):
     assert res.status_code == 403, res.text
 
 
+class _DangerProvider:
+    async def check(self, image_bytes: bytes) -> ModerationVerdict:
+        return ModerationVerdict(flagged=True, categories=["knife"], severe=False)
+
+
+async def test_dangerous_item_blocked_without_strike(client, monkeypatch):
+    """위험 물품(칼 등)은 차단·경고만 — 스트라이크/밴 없음."""
+    monkeypatch.setattr("app.services.photos.get_moderation_provider", lambda: _DangerProvider())
+    headers = await _signup(client, "mod-danger@test.dev")
+
+    res = await client.post(
+        "/photos", headers=headers,
+        files={"file": ("knife.jpg", _image(), "image/jpeg")},
+        data={"consent_image_processing": "true"},
+    )
+    assert res.status_code == 400, res.text
+    body = res.json()["error"]
+    assert body["detail"]["reject_reason"] == "DANGEROUS_CONTENT"
+    assert body["detail"]["banned"] is False
+
+    # 스트라이크가 아니므로 계정은 정상
+    res = await client.get("/me", headers=headers)
+    assert res.status_code == 200, res.text
+
+
 async def test_safe_image_upload_passes(client):
     # 기본(mock) 모더레이션은 통과 — 정상 업로드 경로 유지
     headers = await _signup(client, "mod-pass@test.dev")

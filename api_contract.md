@@ -89,6 +89,7 @@ res 200 (분석은 빠르면 동기 반환, 느리면 202+job — MVP는 동기 
 — 프론트는 "커뮤니티 가이드라인에 맞지 않는 이미지" 안내 표시. (MODERATION_PROVIDER=openai 로 live 활성화)
 - 적발 시 신고함에 자동 접수 + 관리자 웹훅 알림(ADMIN_ALERT_WEBHOOK — Discord/Slack 호환)
 - 누적 3회(MODERATION_BAN_STRIKES) → 계정 제한: 이후 모든 인증 요청이 `403 FORBIDDEN`
+- **위험 물품(칼·총 등)**: 비전 스캔으로 추가 감지 → `reject_reason: "DANGEROUS_CONTENT"`로 차단·경고 + 관리자 알림 (스트라이크 없음)
 
 ### DELETE /photos/{id}  (auth) → 204  (사진 즉시 삭제)
 
