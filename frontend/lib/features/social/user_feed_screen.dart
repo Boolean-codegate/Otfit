@@ -530,8 +530,9 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
   /// 게시할 때 비포를 안 붙였어도, 연결된 피팅 결과의 원본 사진으로 나중에 추가할 수 있다.
   Future<void> _addBefore() async {
     try {
-      final updated =
-          await ref.read(postRepositoryProvider).addBefore(_post.id);
+      final updated = await ref
+          .read(postRepositoryProvider)
+          .updatePost(postId: _post.id, includeBefore: true);
       setState(() => _post = updated);
       ref.invalidate(userPostsProvider(widget.userId));
       ref.invalidate(feedProvider);

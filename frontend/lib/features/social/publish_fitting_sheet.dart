@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../models/mypage.dart';
+import '../../models/post.dart';
 import '../../providers/app_providers.dart';
 
 /// 변신 게시 시트 — 게시물은 '내 피팅 결과(내 사진)'만 올릴 수 있다.
@@ -28,6 +29,22 @@ Future<void> showPublishFittingSheet(
     );
     return;
   }
+  // 게시된 결과를 고르면 '새 게시'가 아니라 기존 게시물 '수정' — 캡션/비포 프리필용
+  List<Post> myPosts = const <Post>[];
+  try {
+    myPosts = await ref.read(userPostsProvider('me').future);
+  } on Object {
+    // 프리필 실패는 치명적이지 않다 (수정 시 캡션만 비어 보임)
+  }
+  if (!context.mounted) return;
+  Post? postFor(MyFitting fitting) {
+    if (fitting.postId == null) return null;
+    for (final post in myPosts) {
+      if (post.id == fitting.postId) return post;
+    }
+    return null;
+  }
+
   // 아직 게시하지 않은 결과를 우선 선택
   MyFitting selected = fittings.firstWhere(
     (fitting) => fitting.postId == null,
@@ -35,6 +52,15 @@ Future<void> showPublishFittingSheet(
   );
   var includeBefore = true;
   final captionController = TextEditingController();
+  void prefillFrom(MyFitting fitting) {
+    final post = postFor(fitting);
+    if (post != null) {
+      captionController.text = post.caption;
+      includeBefore = post.beforeUrl != null;
+    }
+  }
+
+  prefillFrom(selected);
   final published = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
@@ -42,6 +68,7 @@ Future<void> showPublishFittingSheet(
       builder: (sheetContext, setSheetState) {
         final hasBefore = selected.sourcePhotoUrl != null &&
             selected.sourcePhotoUrl!.isNotEmpty;
+        final isEditing = selected.postId != null;
         return Padding(
           padding: EdgeInsets.fromLTRB(
             20, 20, 20, 20 + MediaQuery.of(sheetContext).viewInsets.bottom,
@@ -50,11 +77,13 @@ Future<void> showPublishFittingSheet(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('변신 게시하기',
+              Text(isEditing ? '게시물 수정하기' : '변신 게시하기',
                   style: Theme.of(sheetContext).textTheme.titleLarge),
               const SizedBox(height: 4),
               Text(
-                '내 피팅 결과만 게시할 수 있어요',
+                isEditing
+                    ? '이미 게시된 결과예요 — 캡션과 비포 공개를 수정해요'
+                    : '내 피팅 결과만 게시할 수 있어요',
                 style: Theme.of(sheetContext)
                     .textTheme
                     .bodySmall
@@ -71,7 +100,10 @@ Future<void> showPublishFittingSheet(
                     final fitting = fittings[index];
                     final isSelected = selected.resultId == fitting.resultId;
                     return GestureDetector(
-                      onTap: () => setSheetState(() => selected = fitting),
+                      onTap: () {
+                        prefillFrom(fitting);
+                        setSheetState(() => selected = fitting);
+                      },
                       child: Container(
                         width: 96,
                         decoration: BoxDecoration(
@@ -150,7 +182,7 @@ Future<void> showPublishFittingSheet(
               const SizedBox(height: 8),
               FilledButton(
                 onPressed: () => Navigator.of(sheetContext).pop(true),
-                child: const Text('게시하기'),
+                child: Text(isEditing ? '수정하기' : '게시하기'),
               ),
             ],
           ),
@@ -159,14 +191,27 @@ Future<void> showPublishFittingSheet(
     ),
   );
   if (published != true || !context.mounted) return;
+  final isEditing = selected.postId != null;
+  final hasBefore =
+      selected.sourcePhotoUrl != null && selected.sourcePhotoUrl!.isNotEmpty;
   try {
-    await ref.read(postRepositoryProvider).createPost(
-          resultId: selected.resultId,
-          productId: selected.product?.id,
-          caption: captionController.text.trim(),
-          afterUrl: selected.resultUrl,
-          beforeUrl: includeBefore ? selected.sourcePhotoUrl : null,
-        );
+    if (isEditing) {
+      // 게시된 결과는 중복 게시 대신 기존 게시물 수정
+      await ref.read(postRepositoryProvider).updatePost(
+            postId: selected.postId!,
+            caption: captionController.text.trim(),
+            includeBefore: includeBefore && hasBefore,
+            removeBefore: !includeBefore && hasBefore,
+          );
+    } else {
+      await ref.read(postRepositoryProvider).createPost(
+            resultId: selected.resultId,
+            productId: selected.product?.id,
+            caption: captionController.text.trim(),
+            afterUrl: selected.resultUrl,
+            beforeUrl: includeBefore ? selected.sourcePhotoUrl : null,
+          );
+    }
     ref.invalidate(feedProvider);
     ref.invalidate(myFittingsProvider);
     ref.invalidate(userPostsProvider('me'));
@@ -176,13 +221,13 @@ Future<void> showPublishFittingSheet(
       ref.invalidate(userProfileProvider(feedUserId));
     }
     if (context.mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('게시했어요!')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(isEditing ? '게시물을 수정했어요!' : '게시했어요!')));
     }
   } on Object catch (error) {
     if (context.mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('게시 실패: $error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(isEditing ? '수정 실패: $error' : '게시 실패: $error')));
     }
   }
 }

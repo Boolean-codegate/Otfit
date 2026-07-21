@@ -61,6 +61,8 @@ class PostService:
         if post.user_id != user.id:
             raise AppError("본인 게시물만 수정할 수 있습니다.", code="FORBIDDEN", status_code=403)
 
+        if body.caption is not None:
+            post.caption = body.caption
         if body.remove_before:
             post.before_url = None
         elif body.before_url:

@@ -24,11 +24,12 @@ class PostCreate(BaseModel):
 
 
 class PostUpdate(BaseModel):
-    """게시물 수정 — 비포 추가/제거 (본인만).
+    """게시물 수정 — 캡션/비포 (본인만).
 
     include_before=True면 연결된 피팅 결과(result_id)의 원본 사진을 비포로 사용.
     """
 
+    caption: str | None = Field(default=None, max_length=300)
     before_url: str | None = None
     include_before: bool = False
     remove_before: bool = False

@@ -203,7 +203,7 @@ req: `{ "result_id": "r_1"?, "product_id": "p_1"?, "caption": "…", "before_url
 res 201: `{Post}`
 
 ### PATCH /posts/{id}  (auth) — 본인 게시물만 (403 FORBIDDEN)
-req: `{ "before_url": "…"?, "include_before": true?, "remove_before": true? }`
+req: `{ "caption": "…"?, "before_url": "…"?, "include_before": true?, "remove_before": true? }`
 - `include_before: true` → 연결된 피팅 결과(result_id)의 원본 사진을 비포로 추가 (결과 미연결이면 422)
 - `remove_before: true` → 비포 제거
 res 200: `{Post}`

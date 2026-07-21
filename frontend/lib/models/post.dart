@@ -65,6 +65,7 @@ class Post {
       );
 
   Post copyWith({
+    String? caption,
     String? beforeUrl,
     int? buyVotes,
     int? skipVotes,
@@ -74,7 +75,7 @@ class Post {
     return Post(
       id: id,
       author: author,
-      caption: caption,
+      caption: caption ?? this.caption,
       beforeUrl: beforeUrl ?? this.beforeUrl,
       afterUrl: afterUrl,
       product: product,

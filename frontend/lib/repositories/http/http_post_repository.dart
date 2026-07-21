@@ -62,11 +62,20 @@ class HttpPostRepository implements PostRepository {
   }
 
   @override
-  Future<Post> addBefore(String postId) {
+  Future<Post> updatePost({
+    required String postId,
+    String? caption,
+    bool includeBefore = false,
+    bool removeBefore = false,
+  }) {
     return guardApi(() async {
       final response = await _client.dio.patch<Map<String, dynamic>>(
         '/posts/$postId',
-        data: const <String, dynamic>{'include_before': true},
+        data: <String, dynamic>{
+          'caption': ?caption,
+          if (includeBefore) 'include_before': true,
+          if (removeBefore) 'remove_before': true,
+        },
       );
       return Post.fromJson(response.data ?? const <String, dynamic>{});
     });
