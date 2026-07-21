@@ -10,6 +10,7 @@ import '../../core/widgets/gradient_primary_button.dart';
 import '../../core/widgets/price_text.dart';
 import '../../core/widgets/product_image.dart';
 import '../../models/fitting_result.dart';
+import '../../models/product.dart';
 import '../../providers/app_providers.dart';
 
 class ResultScreen extends ConsumerStatefulWidget {
@@ -635,70 +636,110 @@ class _ResultDetails extends StatelessWidget {
 
   final FittingResult result;
 
+  void _buy(BuildContext context, Product product) {
+    final url = product.productUrl;
+    if (url.startsWith('http')) {
+      launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('이 옷은 아직 구매 링크가 준비되지 않았어요.')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final product = result.product;
+    final items = result.items;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.divider),
+        if (items.length > 1)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Text(
+              '착용한 아이템 ${items.length}개',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleSmall
+                  ?.copyWith(fontWeight: FontWeight.w800),
+            ),
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 88,
-                child: AspectRatio(
-                  aspectRatio: 4 / 5,
-                  child: ProductImage(
-                    assetPath: product.displayImage,
-                    semanticLabel: '${product.name} 상품 이미지',
-                    placeholderLabel: product.brand,
-                    borderRadius: const BorderRadius.all(Radius.circular(14)),
+        for (final (index, product) in items.indexed) ...[
+          if (index > 0) const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: AppColors.divider),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 88,
+                  child: AspectRatio(
+                    aspectRatio: 4 / 5,
+                    child: ProductImage(
+                      assetPath: product.displayImage,
+                      semanticLabel: '${product.name} 상품 이미지',
+                      placeholderLabel: product.brand,
+                      borderRadius:
+                          const BorderRadius.all(Radius.circular(14)),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product.brand,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: AppColors.primaryPurple,
-                        fontWeight: FontWeight.w800,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              product.brand,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelMedium
+                                  ?.copyWith(
+                                    color: AppColors.primaryPurple,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                            ),
+                          ),
+                          _OptionPill(label: product.categoryLabel),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      product.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                    const SizedBox(height: 9),
-                    PriceText(price: product.price, compact: true),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 7,
-                      runSpacing: 7,
-                      children: [
-                        _OptionPill(label: '컬러 ${result.selectedColor}'),
-                        _OptionPill(label: '사이즈 ${result.selectedSize}'),
-                      ],
-                    ),
-                  ],
+                      const SizedBox(height: 5),
+                      Text(
+                        product.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: 9),
+                      PriceText(price: product.price, compact: true),
+                      const SizedBox(height: 10),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: OutlinedButton.icon(
+                          onPressed: () => _buy(context, product),
+                          style: OutlinedButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          icon: const Icon(Icons.shopping_bag_outlined,
+                              size: 16),
+                          label: const Text('구매하러 가기'),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
         const SizedBox(height: 18),
         Container(
           padding: const EdgeInsets.all(18),

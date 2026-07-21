@@ -46,19 +46,28 @@ def _instruction(garments: list[GarmentSpec], style: str | None, variation_seed:
     액세서리/하의 사진의 모델·다른 옷이 결과에 새어들지 않게 한다.
     단일 의류(비액세서리)는 실측 검증된 원래 지시문을 유지한다.
     """
+    # 얼굴 불변 제약 — 모자류 착용 시 얼굴 크기/눈매가 변형되는 문제 방지
+    face_lock = (
+        "가장 중요한 규칙: 얼굴은 원본을 복제하듯 정확히 유지해. "
+        "눈매·코·입·얼굴형·피부·표정·시선은 물론, 얼굴의 크기와 화면 속 위치·비율까지 "
+        "원본과 동일해야 해. 모자를 씌우더라도 얼굴을 다시 그리거나 작게 만들지 말고, "
+        "머리 위에 모자만 얹어. 인물의 프레이밍(카메라 구도, 인물 크기)도 원본 그대로."
+    )
     if len(garments) == 1 and garments[0].category != "accessory":
         garment = garments[0]
         category = _CATEGORY_KO.get(garment.category, "옷")
         desc = _attrs_desc(garment)
         text = (
             f"첫 번째 사진의 인물, 얼굴, 헤어, 체형, 포즈, 배경을 그대로 유지하면서 "
-            f"두 번째 사진의 옷({category})만 자연스럽게 입혀줘. 사실적인 패션 사진처럼."
+            f"두 번째 사진의 옷({category})만 자연스럽게 입혀줘. 사실적인 패션 사진처럼. "
+            + face_lock
         )
         if desc:
             text += f" (상품: {garment.title}, {desc})"
     else:
         lines = [
             "첫 번째 사진의 인물, 얼굴, 헤어, 체형, 포즈, 배경을 그대로 유지해.",
+            face_lock,
             "이후 사진들은 상품 사진이야. 상품 사진 속 모델의 얼굴·몸·배경과 "
             "그 모델이 입은 다른 옷은 절대 결과에 반영하지 말고, 아래 지정한 아이템만 참고해:",
         ]

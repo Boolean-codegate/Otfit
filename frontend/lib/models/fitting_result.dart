@@ -452,9 +452,13 @@ class FittingResult {
     required this.createdAt,
     required this.disclaimer,
     this.generationResult,
-  });
+    List<Product>? items,
+    // ignore: prefer_initializing_formals
+  }) : _items = items;
 
   final String id;
+
+  /// 대표 상품 (게시/피드 연결용 — 첫 번째 아이템)
   final Product product;
   final SelectedUserPhoto userPhoto;
   final String resultImageAsset;
@@ -463,6 +467,10 @@ class FittingResult {
   final DateTime createdAt;
   final String disclaimer;
   final GenerationResult? generationResult;
+  final List<Product>? _items;
+
+  /// 이번 피팅에서 착용한 아이템 전체 (옷/하의/액세서리, 1~3개)
+  List<Product> get items => _items ?? [product];
 
   String get imageAsset => resultImageAsset;
 }

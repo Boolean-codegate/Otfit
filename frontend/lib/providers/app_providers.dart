@@ -870,6 +870,7 @@ class TryOnController extends Notifier<TryOnProcessState> {
         createdAt: DateTime.now(),
         disclaimer: selectedGenerated.disclaimer,
         generationResult: selectedGenerated,
+        items: items,
       );
       ref.read(fittingResultsProvider.notifier).add(result);
       ref.invalidate(myFittingsProvider); // 서버 피팅 기록 갱신
