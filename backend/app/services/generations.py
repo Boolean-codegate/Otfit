@@ -51,8 +51,8 @@ class GenerationService:
         if product_ids:
             if mode != "A_direct":
                 raise AppError("product_ids는 A_direct 모드에서만 사용합니다.", code="VALIDATION_ERROR", status_code=422)
-            if len(product_ids) > 3:
-                raise AppError("한 번에 최대 3개까지 입어볼 수 있어요.", code="VALIDATION_ERROR", status_code=422)
+            if len(product_ids) > 4:
+                raise AppError("한 번에 최대 4개까지 입어볼 수 있어요.", code="VALIDATION_ERROR", status_code=422)
             for pid in product_ids:
                 item = await self.products.get(pid)
                 if item is None:

@@ -402,16 +402,24 @@ final outfitProvider = NotifierProvider<OutfitController, Map<String, Product?>>
 class OutfitController extends Notifier<Map<String, Product?>> {
   static const slotClothes = 'clothes';
   static const slotPants = 'pants';
+  static const slotShoes = 'shoes';
   static const slotAccessory = 'accessory';
-  static const slots = [slotClothes, slotPants, slotAccessory];
+  static const slots = [slotClothes, slotPants, slotShoes, slotAccessory];
+
+  static const _empty = {
+    slotClothes: null,
+    slotPants: null,
+    slotShoes: null,
+    slotAccessory: null,
+  };
 
   @override
-  Map<String, Product?> build() =>
-      const {slotClothes: null, slotPants: null, slotAccessory: null};
+  Map<String, Product?> build() => _empty;
 
   static String slotFor(Product product) => switch (product.category) {
         ProductCategories.pants || ProductCategories.bottom =>
           slotPants,
+        ProductCategories.shoes => slotShoes,
         ProductCategories.accessory => slotAccessory,
         _ => slotClothes,
       };
@@ -421,8 +429,7 @@ class OutfitController extends Notifier<Map<String, Product?>> {
 
   void clearSlot(String slot) => state = {...state, slot: null};
 
-  void reset() =>
-      state = const {slotClothes: null, slotPants: null, slotAccessory: null};
+  void reset() => state = _empty;
 }
 
 /// 슬롯에 담긴 아이템 목록 (옷 → 하의 → 액세서리 순; 첫 항목이 대표 상품)

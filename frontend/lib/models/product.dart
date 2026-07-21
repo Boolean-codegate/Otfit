@@ -11,6 +11,7 @@ abstract final class ProductCategories {
   static const String dress = 'dress';
   static const String pants = 'pants';
   static const String accessory = 'accessory';
+  static const String shoes = 'shoes';
 
   // 레거시 (mock 데이터 전용)
   static const String outer = 'outer';
@@ -23,6 +24,7 @@ abstract final class ProductCategories {
     dress,
     pants,
     accessory,
+    shoes,
   ];
 
   static const List<String> allKnownValues = <String>[
@@ -32,6 +34,7 @@ abstract final class ProductCategories {
     dress,
     pants,
     accessory,
+    shoes,
     outer,
     bottom,
   ];
@@ -44,6 +47,7 @@ abstract final class ProductCategories {
       dress => '원피스',
       pants => '하의',
       accessory => '액세서리',
+      shoes => '신발',
       outer => '아우터',
       bottom => '하의',
       _ => category,
@@ -60,6 +64,7 @@ abstract final class ProductCategories {
       '원피스' || dress => dress,
       '하의' || pants || bottom => pants,
       '액세서리' || accessory => accessory,
+      '신발' || shoes => shoes,
       final value => value,
     };
   }
@@ -97,6 +102,7 @@ class Product {
              category == ProductCategories.dress ||
              category == ProductCategories.pants ||
              category == ProductCategories.accessory ||
+             category == ProductCategories.shoes ||
              category == ProductCategories.outer ||
              category == ProductCategories.bottom,
        );

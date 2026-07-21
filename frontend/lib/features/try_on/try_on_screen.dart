@@ -72,6 +72,7 @@ class _TryOnScreenState extends ConsumerState<TryOnScreen> {
   Future<void> _pickForSlot(String slot) async {
     final allowed = switch (slot) {
       OutfitController.slotPants => const {ProductCategories.pants},
+      OutfitController.slotShoes => const {ProductCategories.shoes},
       OutfitController.slotAccessory => const {ProductCategories.accessory},
       _ => const {
           ProductCategories.top,
@@ -184,6 +185,7 @@ class _TryOnScreenState extends ConsumerState<TryOnScreen> {
 
   static String _slotLabel(String slot) => switch (slot) {
         OutfitController.slotPants => '하의',
+        OutfitController.slotShoes => '신발',
         OutfitController.slotAccessory => '액세서리',
         _ => '옷',
       };
@@ -353,6 +355,7 @@ class _OutfitSlots extends StatelessWidget {
   static const _slotMeta = [
     (OutfitController.slotClothes, '옷', Icons.checkroom_rounded),
     (OutfitController.slotPants, '하의', Icons.straighten_rounded),
+    (OutfitController.slotShoes, '신발', Icons.ice_skating_rounded),
     (OutfitController.slotAccessory, '액세서리', Icons.watch_rounded),
   ];
 

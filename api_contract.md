@@ -114,7 +114,7 @@ res 200:
 ## 5. 생성 (핵심 비동기 플로우)
 ### POST /generations  (auth)
 req: `{ "photo_id": "p_1", "mode": "B_stylist", "product_id": "prod_1", "product_ids": ["prod_1","prod_2"]?, "options": { "styles": ["casual","formal"] } }`
-- `product_ids` (A_direct 전용, 1~3개): 옷/하의/액세서리 조합을 한 번에 피팅. 첫 항목이 대표 상품, `product_id`는 무시.
+- `product_ids` (A_direct 전용, 1~4개): 옷/하의/액세서리/신발 조합을 한 번에 피팅. 첫 항목이 대표 상품, `product_id`는 무시.
 res 202:
 ```json
 { "job_id": "job_1", "status": "queued", "credits_charged": 1 }

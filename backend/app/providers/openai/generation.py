@@ -28,7 +28,7 @@ _FALLBACK_IMAGE_MODEL = "gpt-image-1.5"
 # 계약 카테고리 → 지시문에 쓸 명칭
 _CATEGORY_KO = {
     "top": "상의", "jacket": "재킷", "shirt": "셔츠", "dress": "원피스",
-    "pants": "하의", "accessory": "액세서리",
+    "pants": "하의", "accessory": "액세서리", "shoes": "신발",
 }
 
 

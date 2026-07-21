@@ -64,7 +64,7 @@ class HomeHeroCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 18),
                   Text(
-                    '비포에서,\n애프터로.',
+                    '사기 전에,\n입어보다.',
                     style: textTheme.headlineMedium?.copyWith(
                       color: AppColors.surface,
                       fontWeight: FontWeight.w900,
@@ -73,7 +73,7 @@ class HomeHeroCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '사진 한 장이면 어떤 옷이든 입어볼 수 있어요.\n얼굴도 배경도 그대로, 옷만 바뀌어요.',
+                    '온라인의 모든 옷이 내 피팅룸 안으로.\n필요한 건 사진 한 장.',
                     style: textTheme.bodyMedium?.copyWith(
                       color: AppColors.surface.withValues(alpha: 0.85),
                       height: 1.45,
