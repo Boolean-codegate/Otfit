@@ -13,6 +13,8 @@
 | ⚙️ API (Swagger) | https://port-0-otfit-api-m7c8oc297ff7fd19.sel4.cloudtype.app/docs |
 | 🎬 **데모 영상** | [demo/OTFIT_DEMO.mp4](demo/OTFIT_DEMO.mp4) |
 
+🎬 **[YouTube에서 데모 영상 보기](https://www.youtube.com/watch?v=f_NS_p3AZ7s)**
+
 ## ✨ 핵심 기능
 
 - **한 번에 최대 4개까지 AI 피팅** — 상의, 하의, 신발, 액세서리 중 원하는 아이템만 골라 담아보세요. 얼굴이나 체형, 포즈, 배경, 구도는 그대로 유지하고 옷만 자연스럽게 바꿔드려요. 한 번의 생성으로 전체 코디를 완성할 수 있어요.
