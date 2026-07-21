@@ -4,12 +4,15 @@
 FROM ghcr.io/cirruslabs/flutter:3.44.0 AS build
 
 WORKDIR /app
+# 의존성 레이어 분리 — 코드만 바뀐 빌드에서 pub get 캐시 재사용
+COPY frontend/pubspec.yaml frontend/pubspec.lock ./
+RUN flutter pub get
 COPY frontend/ .
 
 ARG API_BASE_URL=https://port-0-otfit-api-m7c8oc297ff7fd19.sel4.cloudtype.app
 
 # --pwa-strategy none: 서비스워커 미사용 → 재배포가 새로고침만으로 반영됨 (데모에 오프라인 캐시 불필요)
-RUN flutter pub get && flutter build web --release --pwa-strategy none \
+RUN flutter build web --release --pwa-strategy none \
     --dart-define=API_BASE_URL=${API_BASE_URL}
 
 # 2단계: 정적 서빙 (비루트 nginx — Cloudtype 권한 제약 대응, 8080 리슨)
