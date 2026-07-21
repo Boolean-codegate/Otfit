@@ -63,12 +63,17 @@ class HomeHeroCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 18),
-                  Text(
-                    '사기 전에,\n입어보다.',
-                    style: textTheme.headlineMedium?.copyWith(
-                      color: AppColors.surface,
-                      fontWeight: FontWeight.w900,
-                      height: 1.15,
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '사기 전에, 입어보다.',
+                      maxLines: 1,
+                      style: textTheme.headlineMedium?.copyWith(
+                        color: AppColors.surface,
+                        fontWeight: FontWeight.w900,
+                        height: 1.15,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
