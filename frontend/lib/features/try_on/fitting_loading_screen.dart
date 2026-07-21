@@ -1,0 +1,303 @@
+import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../core/theme/app_colors.dart';
+import '../../models/fitting_result.dart';
+import '../../providers/app_providers.dart';
+
+class FittingLoadingScreen extends ConsumerStatefulWidget {
+  const FittingLoadingScreen({super.key});
+
+  @override
+  ConsumerState<FittingLoadingScreen> createState() =>
+      _FittingLoadingScreenState();
+}
+
+class _FittingLoadingScreenState extends ConsumerState<FittingLoadingScreen> {
+  bool _started = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _start());
+  }
+
+  Future<void> _start() async {
+    if (_started || !mounted) return;
+    _started = true;
+    final result = await ref.read(tryOnProgressProvider.notifier).startTryOn();
+    if (!mounted) return;
+    if (result != null) {
+      context.go('/result');
+      return;
+    }
+    final message = ref.read(tryOnProgressProvider).message;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message.isEmpty ? '피팅을 완료하지 못했어요.' : message)),
+    );
+    context.go('/try-on');
+  }
+
+  Future<void> _requestExit() async {
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.hourglass_top_rounded),
+        title: const Text('피팅을 중단할까요?'),
+        content: const Text('진행 중인 작업을 중단하면 현재 결과는 저장되지 않아요.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('계속 기다리기'),
+          ),
+          FilledButton.tonal(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('중단하기'),
+          ),
+        ],
+      ),
+    );
+    if (shouldExit != true || !mounted) return;
+    ref.read(tryOnProgressProvider.notifier).cancel();
+    context.go('/try-on');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = ref.watch(tryOnProgressProvider);
+    final step = progress.step;
+    final currentStep = step == null ? 0 : TryOnStep.values.indexOf(step) + 1;
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _requestExit();
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: Stack(
+            children: [
+              const Positioned.fill(child: _AnimatedBackground()),
+              Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 520),
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(24, 30, 24, 24),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface.withValues(alpha: 0.94),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: AppColors.surface.withValues(alpha: 0.65),
+                        ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: AppColors.shadow,
+                            blurRadius: 30,
+                            offset: Offset(0, 14),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const _ScanningMark(),
+                          const SizedBox(height: 26),
+                          Text(
+                            'AI 피팅을 만들고 있어요',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                          const SizedBox(height: 10),
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 260),
+                            child: Text(
+                              progress.message.isEmpty
+                                  ? 'AI 피팅을 준비하고 있어요'
+                                  : progress.message,
+                              key: ValueKey(progress.message),
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(
+                                    color: AppColors.secondaryText,
+                                    height: 1.5,
+                                  ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: LinearProgressIndicator(
+                              value: progress.progress == 0
+                                  ? null
+                                  : progress.progress,
+                              minHeight: 8,
+                              backgroundColor: AppColors.lightPurple,
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                AppColors.primaryPurple,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(
+                              3,
+                              (index) => AnimatedContainer(
+                                duration: const Duration(milliseconds: 220),
+                                width: 9,
+                                height: 9,
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: index < currentStep
+                                      ? AppColors.primaryPurple
+                                      : AppColors.divider,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          TextButton.icon(
+                            onPressed: _requestExit,
+                            icon: const Icon(Icons.close_rounded),
+                            label: const Text('피팅 중단'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AnimatedBackground extends StatefulWidget {
+  const _AnimatedBackground();
+
+  @override
+  State<_AnimatedBackground> createState() => _AnimatedBackgroundState();
+}
+
+class _AnimatedBackgroundState extends State<_AnimatedBackground>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) => DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment(-1 + _controller.value * 0.5, -1),
+            end: Alignment(1, 1 - _controller.value * 0.5),
+            colors: const [
+              AppColors.lightPurple,
+              AppColors.background,
+              AppColors.surface,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ScanningMark extends StatefulWidget {
+  const _ScanningMark();
+
+  @override
+  State<_ScanningMark> createState() => _ScanningMarkState();
+}
+
+class _ScanningMarkState extends State<_ScanningMark>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1700),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.square(
+      dimension: 112,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) => Stack(
+          alignment: Alignment.center,
+          children: [
+            Transform.rotate(
+              angle: _controller.value * math.pi * 2,
+              child: Container(
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: SweepGradient(
+                    colors: [
+                      AppColors.gradientStart,
+                      AppColors.gradientEnd,
+                      AppColors.lightPurple,
+                      AppColors.gradientStart,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Container(
+              margin: const EdgeInsets.all(7),
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                shape: BoxShape.circle,
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.auto_awesome_rounded,
+                  size: 42,
+                  color: AppColors.primaryPurple,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
