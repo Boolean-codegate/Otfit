@@ -32,6 +32,58 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
     context.go('/try-on');
   }
 
+  /// 피팅 결과를 SNS 피드에 게시 (계약 §10 POST /posts).
+  Future<void> _publishToFeed(FittingResult result) async {
+    final controller = TextEditingController();
+    final caption = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          20, 20, 20, 20 + MediaQuery.of(sheetContext).viewInsets.bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('피드에 게시',
+                style: Theme.of(sheetContext).textTheme.titleLarge),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              maxLength: 300,
+              maxLines: 3,
+              autofocus: true,
+              decoration: const InputDecoration(
+                hintText: '이 룩 어때요? 살까 말까 물어보세요 🙋',
+              ),
+            ),
+            const SizedBox(height: 8),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.of(sheetContext).pop(controller.text.trim()),
+              child: const Text('게시하기'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (caption == null || !mounted) return;
+    try {
+      await ref.read(feedProvider.notifier).publish(
+            resultId: result.generationResult?.id,
+            productId:
+                result.generationResult == null ? result.product.id : null,
+            caption: caption,
+          );
+      if (!mounted) return;
+      _showMessage('피드에 게시했어요! 투표 반응을 확인해보세요.');
+      context.go('/feed');
+    } on Object catch (error) {
+      if (mounted) _showMessage('게시 실패: $error');
+    }
+  }
+
   void _showPurchaseNotice() {
     showDialog<void>(
       context: context,
@@ -69,7 +121,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
           ? null
           : _ResultBottomActions(
               onSave: () => _showMessage('사진 저장 기능은 플랫폼 연결 후 제공될 예정이에요.'),
-              onShare: () => _showMessage('공유 기능은 플랫폼 연결 후 제공될 예정이에요.'),
+              onShare: () => _publishToFeed(result),
               onOther: () => context.go('/shop'),
               onPurchase: _showPurchaseNotice,
             ),
@@ -717,8 +769,8 @@ class _ResultBottomActions extends StatelessWidget {
                             Expanded(
                               child: OutlinedButton.icon(
                                 onPressed: onShare,
-                                icon: const Icon(Icons.ios_share_rounded),
-                                label: const Text('공유하기'),
+                                icon: const Icon(Icons.dynamic_feed_rounded),
+                                label: const Text('피드에 게시'),
                               ),
                             ),
                           ],
@@ -755,9 +807,9 @@ class _ResultBottomActions extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       IconButton.outlined(
-                        tooltip: '공유하기',
+                        tooltip: '피드에 게시',
                         onPressed: onShare,
-                        icon: const Icon(Icons.ios_share_rounded),
+                        icon: const Icon(Icons.dynamic_feed_rounded),
                       ),
                       const SizedBox(width: 12),
                       Expanded(

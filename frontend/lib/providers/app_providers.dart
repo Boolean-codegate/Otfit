@@ -12,8 +12,11 @@ import '../models/product.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/consent_repository.dart';
 import '../repositories/credit_repository.dart';
+import '../models/post.dart';
+import '../repositories/http/http_post_repository.dart';
 import '../repositories/http/http_product_repository.dart';
 import '../repositories/http/http_try_on_repository.dart';
+import '../repositories/post_repository.dart';
 import '../repositories/product_repository.dart';
 import '../repositories/shop_repository.dart';
 import '../repositories/try_on_repository.dart';
@@ -72,6 +75,85 @@ final tryOnRepositoryProvider = Provider<TryOnRepository>((ref) {
       ? MockTryOnRepository()
       : HttpTryOnRepository(ref.watch(apiClientProvider));
 });
+
+final postRepositoryProvider = Provider<PostRepository>((ref) {
+  return AppConfig.usesMockApi
+      ? MockPostRepository()
+      : HttpPostRepository(ref.watch(apiClientProvider));
+});
+
+/// 피드 정렬 (hot | new)
+final feedSortProvider = NotifierProvider<FeedSortController, String>(
+  FeedSortController.new,
+);
+
+class FeedSortController extends Notifier<String> {
+  @override
+  String build() => 'hot';
+
+  void setSort(String sort) => state = sort;
+}
+
+final feedPlatformsProvider = FutureProvider<List<FeedPlatform>>((ref) {
+  return ref.watch(postRepositoryProvider).fetchPlatforms();
+});
+
+/// 피드 목록 + 투표/게시 상태 관리
+final feedProvider = AsyncNotifierProvider<FeedController, List<Post>>(
+  FeedController.new,
+);
+
+class FeedController extends AsyncNotifier<List<Post>> {
+  @override
+  Future<List<Post>> build() async {
+    final sort = ref.watch(feedSortProvider);
+    final page = await ref
+        .read(postRepositoryProvider)
+        .fetchFeed(sort: sort, limit: 30);
+    return page.items;
+  }
+
+  Future<void> refresh() async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      final page = await ref
+          .read(postRepositoryProvider)
+          .fetchFeed(sort: ref.read(feedSortProvider), limit: 30);
+      return page.items;
+    });
+  }
+
+  /// 투표 후 해당 게시물만 갱신. 지급된 보상 크레딧(0이면 미지급)을 반환.
+  Future<int> vote({required String postId, required String choice}) async {
+    final result = await ref
+        .read(postRepositoryProvider)
+        .vote(postId: postId, choice: choice);
+    final current = state.value ?? const <Post>[];
+    state = AsyncValue.data([
+      for (final post in current)
+        if (post.id == result.post.id) result.post else post,
+    ]);
+    if (result.rewardCredits > 0) {
+      // 크레딧 잔액 갱신 (프로필/세션 표시용)
+      await ref.read(authSessionProvider.notifier).refreshMe();
+    }
+    return result.rewardCredits;
+  }
+
+  Future<Post> publish({
+    String? resultId,
+    String? productId,
+    String caption = '',
+  }) async {
+    final post = await ref.read(postRepositoryProvider).createPost(
+          resultId: resultId,
+          productId: productId,
+          caption: caption,
+        );
+    state = AsyncValue.data([post, ...state.value ?? const <Post>[]]);
+    return post;
+  }
+}
 
 /// 현재 세션 사용자 (HTTP 모드: GET /me, mock: 고정 유저).
 final currentUserProvider = FutureProvider<User>((ref) {

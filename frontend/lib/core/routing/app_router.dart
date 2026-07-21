@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/login_screen.dart';
+import '../../features/feed/feed_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/photo/photo_selection_screen.dart';
@@ -42,6 +43,15 @@ final GoRouter appRouter = GoRouter(
               path: '/home',
               pageBuilder: (context, state) =>
                   _fadePage(state: state, child: const HomeScreen()),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/feed',
+              pageBuilder: (context, state) =>
+                  _fadePage(state: state, child: const FeedScreen()),
             ),
           ],
         ),
