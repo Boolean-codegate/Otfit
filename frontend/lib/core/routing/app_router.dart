@@ -16,6 +16,8 @@ import '../../features/profile/profile_screen.dart';
 import '../../features/result/result_screen.dart';
 import '../../features/shop/product_detail_screen.dart';
 import '../../features/shop/shop_screen.dart';
+import '../../features/social/user_feed_screen.dart';
+import '../../features/social/user_search_screen.dart';
 import '../../features/splash/splash_screen.dart';
 import '../../features/try_on/fitting_loading_screen.dart';
 import '../../features/try_on/try_on_screen.dart';
@@ -94,6 +96,18 @@ final GoRouter appRouter = GoRouter(
       path: '/photo',
       pageBuilder: (context, state) =>
           _slidePage(state: state, child: const PhotoSelectionScreen()),
+    ),
+    GoRoute(
+      path: '/users/search-people',
+      pageBuilder: (context, state) =>
+          _slidePage(state: state, child: const UserSearchScreen()),
+    ),
+    GoRoute(
+      path: '/users/:userId',
+      pageBuilder: (context, state) => _slidePage(
+        state: state,
+        child: UserFeedScreen(userId: state.pathParameters['userId'] ?? 'me'),
+      ),
     ),
     GoRoute(
       path: '/profile/fittings',

@@ -11,7 +11,8 @@ ARG API_BASE_URL=https://port-0-otfit-api-m7c8oc297ff7fd19.sel4.cloudtype.app
 ARG DEV_LOGIN_EMAIL=
 ARG DEV_LOGIN_PASSWORD=
 
-RUN flutter pub get && flutter build web --release \
+# --pwa-strategy none: 서비스워커 미사용 → 재배포가 새로고침만으로 반영됨 (데모에 오프라인 캐시 불필요)
+RUN flutter pub get && flutter build web --release --pwa-strategy none \
     --dart-define=API_BASE_URL=${API_BASE_URL} \
     --dart-define=DEV_LOGIN_EMAIL=${DEV_LOGIN_EMAIL} \
     --dart-define=DEV_LOGIN_PASSWORD=${DEV_LOGIN_PASSWORD}

@@ -236,6 +236,22 @@ res 200: `{ "items": [{ "id","storage_url","width","height","status","uploaded_a
 ### PUT /me/favorites/{product_id}  (auth) → 200 `{ "ok": true }`  (멱등)
 ### DELETE /me/favorites/{product_id}  (auth) → 204
 
+## 12. 소셜 프로필 (인스타형)
+
+### GET /users/search?q=  (auth)
+닉네임 부분일치 검색 (최대 20). res 200: `{ "items": [{ "id","nickname" }] }`
+
+### GET /users/{id}/profile  (auth) — `{id}`에 `me` 별칭 허용
+res 200: `{ "id","nickname","post_count","follower_count","following_count","is_following","is_me" }`
+
+### GET /users/{id}/posts  (auth)  `?limit&cursor` — 해당 유저 게시물 최신순 (그리드용)
+res 200: `{ "items":[{Post}], "next_cursor" }`
+
+### PUT /users/{id}/follow  (auth) → 200 `{ "ok": true }` (멱등, 자기 자신 422)
+### DELETE /users/{id}/follow  (auth) → 204
+
+### DELETE /posts/{id}  (auth) → 204 (본인 게시물만, 403 FORBIDDEN)
+
 ## 통합 체크리스트 (나중에 붙일 때)
 - [ ] 프론트가 쓴 mock 응답 shape == 이 문서 == 백엔드 실제 응답
 - [ ] `API_BASE_URL`만 바꿔서 mock↔real 전환되는지

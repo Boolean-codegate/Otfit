@@ -118,7 +118,11 @@ class FittingDetailScreen extends ConsumerWidget {
         child: ResponsiveContent(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(20),
-            child: Column(
+            child: Center(
+              child: ConstrainedBox(
+                // 모바일은 꽉 차게, PC에서는 카드 폭을 제한해 한눈에 보이도록
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 ClipRRect(
@@ -245,6 +249,8 @@ class FittingDetailScreen extends ConsumerWidget {
                   ],
                 ),
               ],
+                ),
+              ),
             ),
           ),
         ),

@@ -38,6 +38,13 @@ class FeedScreen extends ConsumerWidget {
                               ?.copyWith(fontWeight: FontWeight.w800),
                         ),
                         const Spacer(),
+                        IconButton(
+                          tooltip: '계정 검색',
+                          icon: const Icon(Icons.search_rounded),
+                          onPressed: () =>
+                              context.push('/users/search-people'),
+                        ),
+                        const SizedBox(width: 4),
                         _SortChip(
                           label: '인기',
                           selected: sort == 'hot',
@@ -268,23 +275,31 @@ class _PostCard extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: AppColors.lightPurple,
-                  child: Text(
-                    post.author.nickname.characters.first,
-                    style: const TextStyle(
-                      color: AppColors.primaryPurple,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13,
-                    ),
+                InkWell(
+                  onTap: () => context.push('/users/${post.author.id}'),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 16,
+                        backgroundColor: AppColors.lightPurple,
+                        child: Text(
+                          post.author.nickname.characters.first,
+                          style: const TextStyle(
+                            color: AppColors.primaryPurple,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        post.author.nickname,
+                        style: textTheme.labelLarge
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  post.author.nickname,
-                  style: textTheme.labelLarge
-                      ?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const Spacer(),
                 Text(
@@ -405,7 +420,7 @@ class _PostCard extends ConsumerWidget {
                   onTap: () => showModalBottomSheet<void>(
                     context: context,
                     isScrollControlled: true,
-                    builder: (_) => _CommentsSheet(postId: post.id),
+                    builder: (_) => CommentsSheet(postId: post.id),
                   ),
                   borderRadius: BorderRadius.circular(10),
                   child: Padding(
@@ -481,16 +496,16 @@ class _VoteButton extends StatelessWidget {
 }
 
 /// 댓글 시트 (계약 §10 GET/POST /posts/{id}/comments)
-class _CommentsSheet extends ConsumerStatefulWidget {
-  const _CommentsSheet({required this.postId});
+class CommentsSheet extends ConsumerStatefulWidget {
+  const CommentsSheet({super.key, required this.postId});
 
   final String postId;
 
   @override
-  ConsumerState<_CommentsSheet> createState() => _CommentsSheetState();
+  ConsumerState<CommentsSheet> createState() => CommentsSheetState();
 }
 
-class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
+class CommentsSheetState extends ConsumerState<CommentsSheet> {
   final _controller = TextEditingController();
   late Future<List<PostComment>> _future;
   bool _sending = false;

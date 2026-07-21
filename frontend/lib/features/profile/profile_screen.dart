@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
-import '../../core/widgets/fitting_history_card.dart';
 import '../../models/mypage.dart';
 import '../../providers/app_providers.dart';
 
@@ -18,14 +17,7 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final histories = ref.watch(fittingResultsProvider).take(3).toList();
-    final historyCardWidth = (MediaQuery.sizeOf(context).width - 40).clamp(
-      280.0,
-      380.0,
-    );
-    final textScale = MediaQuery.textScalerOf(context).scale(1);
-    final textScaleExtra = (textScale - 1).clamp(0.0, 0.35).toDouble();
-    final historyHeight = 224.0 + textScaleExtra * 110;
+    final fittings = ref.watch(myFittingsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -66,51 +58,48 @@ class ProfileScreen extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  SizedBox(
-                    height: historyHeight,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: histories.length,
-                      separatorBuilder: (_, _) => const SizedBox(width: 12),
-                      itemBuilder: (context, index) {
-                        final history = histories[index];
-                        return SizedBox(
-                          width: historyCardWidth,
-                          child: FittingHistoryCard(
-                            result: history,
-                            onTap: () => context.push(
-                              '/profile/fittings/detail',
-                              extra: MyFitting(
-                                resultId:
-                                    history.generationResult?.id ?? history.id,
-                                jobId: '',
-                                resultUrl: history.resultImageAsset,
-                                styleLabel:
-                                    history.generationResult?.styleLabel,
-                                product: history.product,
-                                createdAt: history.createdAt.toUtc(),
-                              ),
-                            ),
-                            onTryAgain: () {
-                              ref
-                                  .read(selectedProductProvider.notifier)
-                                  .selectProduct(history.product);
-                              ref
-                                  .read(selectedColorProvider.notifier)
-                                  .selectColor(history.selectedColor);
-                              ref
-                                  .read(selectedSizeProvider.notifier)
-                                  .selectSize(history.selectedSize);
-                              if (ref.read(selectedUserPhotoProvider) == null) {
-                                context.push('/photo');
-                              } else {
-                                context.go('/try-on');
-                              }
-                            },
-                          ),
-                        );
-                      },
+                  fittings.when(
+                    loading: () => const SizedBox(
+                      height: 90,
+                      child: Center(child: CircularProgressIndicator()),
                     ),
+                    error: (_, _) => const SizedBox(
+                      height: 60,
+                      child: Center(child: Text('피팅 기록을 불러오지 못했어요')),
+                    ),
+                    data: (items) => items.isEmpty
+                        ? Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppColors.divider),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.auto_awesome_outlined,
+                                    color: AppColors.disabled),
+                                const SizedBox(width: 10),
+                                const Expanded(
+                                    child: Text('아직 피팅 기록이 없어요')),
+                                TextButton(
+                                  onPressed: () => context.go('/try-on'),
+                                  child: const Text('입혀보기'),
+                                ),
+                              ],
+                            ),
+                          )
+                        : SizedBox(
+                            height: 236,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: items.take(6).length,
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(width: 12),
+                              itemBuilder: (context, index) =>
+                                  _RecentFittingCard(fitting: items[index]),
+                            ),
+                          ),
                   ),
                   const SizedBox(height: 30),
                   Text(
@@ -120,6 +109,11 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 12),
                   _MenuGroup(
                     children: [
+                      _MenuItem(
+                        icon: Icons.grid_on_rounded,
+                        label: '내 피드',
+                        onTap: () => context.push('/users/me'),
+                      ),
                       _MenuItem(
                         icon: Icons.auto_awesome_motion_outlined,
                         label: '내 피팅 기록',
@@ -416,6 +410,61 @@ class _MenuItem extends StatelessWidget {
               ),
             ],
           ),
+    );
+  }
+}
+
+
+class _RecentFittingCard extends StatelessWidget {
+  const _RecentFittingCard({required this.fitting});
+
+  final MyFitting fitting;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return SizedBox(
+      width: 132,
+      child: Material(
+        color: AppColors.surface,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(color: AppColors.divider),
+        ),
+        child: InkWell(
+          onTap: () =>
+              context.push('/profile/fittings/detail', extra: fitting),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AspectRatio(
+                aspectRatio: 3 / 4,
+                child: fitting.resultUrl.startsWith('assets/')
+                    ? Image.asset(fitting.resultUrl, fit: BoxFit.cover)
+                    : Image.network(
+                        fitting.resultUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => const ColoredBox(
+                          color: AppColors.surfaceMuted,
+                          child: Icon(Icons.broken_image_outlined),
+                        ),
+                      ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+                child: Text(
+                  fitting.product?.title ?? '피팅 결과',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.labelSmall
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

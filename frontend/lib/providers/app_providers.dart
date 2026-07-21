@@ -14,14 +14,17 @@ import '../repositories/consent_repository.dart';
 import '../repositories/credit_repository.dart';
 import '../models/mypage.dart';
 import '../models/post.dart';
+import '../models/social.dart';
 import '../repositories/http/http_mypage_repository.dart';
 import '../repositories/http/http_post_repository.dart';
+import '../repositories/http/http_social_repository.dart';
 import '../repositories/http/http_product_repository.dart';
 import '../repositories/http/http_try_on_repository.dart';
 import '../repositories/mypage_repository.dart';
 import '../repositories/post_repository.dart';
 import '../repositories/product_repository.dart';
 import '../repositories/shop_repository.dart';
+import '../repositories/social_repository.dart';
 import '../repositories/try_on_repository.dart';
 
 export '../models/fitting_result.dart' show SelectedUserPhoto;
@@ -83,6 +86,25 @@ final postRepositoryProvider = Provider<PostRepository>((ref) {
   return AppConfig.usesMockApi
       ? MockPostRepository()
       : HttpPostRepository(ref.watch(apiClientProvider));
+});
+
+final socialRepositoryProvider = Provider<SocialRepository>((ref) {
+  return AppConfig.usesMockApi
+      ? MockSocialRepository()
+      : HttpSocialRepository(ref.watch(apiClientProvider));
+});
+
+/// 유저 프로필 ('me' 별칭 허용). 팔로우 토글 시 invalidate로 갱신.
+final userProfileProvider =
+    FutureProvider.family<UserProfile, String>((ref, userId) {
+  ref.watch(authSessionProvider.select((session) => session.value?.id));
+  return ref.watch(socialRepositoryProvider).fetchProfile(userId);
+});
+
+/// 유저 게시물 그리드
+final userPostsProvider = FutureProvider.family<List<Post>, String>((ref, userId) {
+  ref.watch(authSessionProvider.select((session) => session.value?.id));
+  return ref.watch(socialRepositoryProvider).fetchUserPosts(userId);
 });
 
 final myPageRepositoryProvider = Provider<MyPageRepository>((ref) {
