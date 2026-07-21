@@ -42,6 +42,7 @@ class GarmentSpec:
     brand: str
     category: str
     attributes: dict  # color / pattern / length / material
+    image_url: str = ""  # 상품 옷 이미지 (Segmind garm_img — 공개 URL이어야 함)
 
 
 class VisionProvider(ABC):

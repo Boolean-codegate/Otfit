@@ -91,8 +91,13 @@ class GenerationService:
         return job
 
     async def visible_results(self, job: GenerationJob) -> list[GenerationResult]:
-        """품질 검사 통과 결과만 노출 (계약 §5: 탈락 결과는 애초에 포함하지 않음)."""
+        """품질 검사 통과 결과만 노출 (계약 §5: 탈락 결과는 애초에 포함하지 않음).
+
+        QUALITY_GATE_ENFORCE=false면 게이트를 기록용으로만 쓰고 전부 노출한다 (실험 모드).
+        """
         results = await self.jobs.results_for_job(job.id)
+        if not self.settings.quality_gate_enforce:
+            return results
         threshold = self.settings.quality_score_threshold
         return [r for r in results if r.identity_preserved and r.quality_score >= threshold]
 

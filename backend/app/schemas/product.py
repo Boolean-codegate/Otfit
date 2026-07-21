@@ -23,6 +23,14 @@ class ProductOut(ORMModel):
     def price_to_int(cls, v):
         return int(v)
 
+    @field_validator("image_url", mode="before")
+    @classmethod
+    def resolve_image_url(cls, v):
+        # DB에 R2 key만 저장된 경우 응답 시점에 presigned/공개 URL로 변환
+        from app.services.catalog import resolve_product_image_url
+
+        return resolve_product_image_url(str(v))
+
 
 class ProductListResponse(BaseModel):
     items: list[ProductOut]

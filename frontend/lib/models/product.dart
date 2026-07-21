@@ -1,19 +1,37 @@
 import 'package:flutter/foundation.dart';
 
 /// Wire values defined by `api_contract.md` for `GET /products`.
+/// 계약(백엔드 MVP) 카테고리: top | jacket | shirt | dress.
+/// `outer`/`bottom`은 계약에 없는 로컬 mock 전용 레거시 값 — 서버 필터로 보내면
+/// 결과가 비므로 UI 필터에서는 사용하지 않는다.
 abstract final class ProductCategories {
   static const String top = 'top';
-  static const String outer = 'outer';
+  static const String jacket = 'jacket';
+  static const String shirt = 'shirt';
   static const String dress = 'dress';
+
+  // 레거시 (mock 데이터 전용)
+  static const String outer = 'outer';
   static const String bottom = 'bottom';
 
-  static const List<String> values = <String>[top, outer, dress, bottom];
+  static const List<String> values = <String>[top, jacket, shirt, dress];
+
+  static const List<String> allKnownValues = <String>[
+    top,
+    jacket,
+    shirt,
+    dress,
+    outer,
+    bottom,
+  ];
 
   static String labelFor(String category) {
     return switch (category) {
       top => '상의',
-      outer => '아우터',
+      jacket => '재킷',
+      shirt => '셔츠',
       dress => '원피스',
+      outer => '아우터',
       bottom => '하의',
       _ => category,
     };
@@ -24,7 +42,8 @@ abstract final class ProductCategories {
     return switch (filter.trim().toLowerCase()) {
       '' || '전체' || 'all' => null,
       '상의' || top => top,
-      '아우터' || outer => outer,
+      '재킷' || '아우터' || jacket || outer => jacket,
+      '셔츠' || shirt => shirt,
       '원피스' || dress => dress,
       '하의' || bottom => bottom,
       final value => value,
@@ -59,8 +78,10 @@ class Product {
        assert(discountPercent >= 0 && discountPercent <= 100),
        assert(
          category == ProductCategories.top ||
-             category == ProductCategories.outer ||
+             category == ProductCategories.jacket ||
+             category == ProductCategories.shirt ||
              category == ProductCategories.dress ||
+             category == ProductCategories.outer ||
              category == ProductCategories.bottom,
        );
 

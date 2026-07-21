@@ -18,6 +18,7 @@ from app.repositories.consents import ConsentRepository
 from app.repositories.generations import GenerationRepository
 from app.repositories.photos import PhotoRepository
 from app.repositories.products import ProductRepository
+from app.services.catalog import resolve_product_image_url
 from app.services.credits import CreditService
 from app.services.recommendations import RecommendationService
 from app.storage.base import get_storage
@@ -29,7 +30,7 @@ STEP_LABELS = {
     "queued": "대기 중",
     "analyzing": "사진 분석 중",
     "searching": "상품 검색 중",
-    "generating": "의상 생성 중",
+    "generating": "AI가 옷을 입히는 중",
     "quality_check": "품질 검사 중",
     "done": "완료",
     "failed": "실패",
@@ -106,6 +107,9 @@ async def _run(session: AsyncSession, job_id: uuid.UUID) -> None:
         generation = get_generation_provider()
         vision_provider = get_vision_provider()
         survivors = []
+        # QUALITY_GATE_ENFORCE=false면 게이트는 '기록만' — 첫 결과를 무조건 저장한다
+        enforce_gate = settings.quality_gate_enforce
+        max_attempts = settings.generation_max_retries + 1 if enforce_gate else 1
         for index, (product, style_label, base_seed) in enumerate(candidates):
             garment = GarmentSpec(
                 product_id=str(product.id),
@@ -113,20 +117,25 @@ async def _run(session: AsyncSession, job_id: uuid.UUID) -> None:
                 brand=product.brand,
                 category=product.category,
                 attributes=product.attributes,
+                # R2 key 저장분은 presigned URL로 변환 (Segmind garm_img는 공개 접근 필요)
+                image_url=resolve_product_image_url(product.image_url),
             )
-            for attempt in range(settings.generation_max_retries + 1):
+            for attempt in range(max_attempts):
                 generated = await generation.swap_garment(
                     photo_bytes, garment, vision, style=style_label, variation_seed=base_seed + attempt
                 )
                 report = await vision_provider.assess_quality(photo_bytes, generated)
-                if report.identity_preserved and report.quality_score >= settings.quality_score_threshold:
+                passed = report.identity_preserved and report.quality_score >= settings.quality_score_threshold
+                if not passed:
+                    logger.warning(
+                        "job %s candidate %s attempt %s %s (score=%.2f identity=%s issues=%s)",
+                        job.id, product.id, attempt,
+                        "rejected" if enforce_gate else "below-threshold (기록만, 저장함)",
+                        report.quality_score, report.identity_preserved, report.issues,
+                    )
+                if passed or not enforce_gate:
                     survivors.append((product, style_label, generated, report))
                     break
-                logger.warning(
-                    "job %s candidate %s attempt %s rejected (score=%.2f identity=%s issues=%s)",
-                    job.id, product.id, attempt, report.quality_score,
-                    report.identity_preserved, report.issues,
-                )
         await _set_status(session, job, "quality_check", 0.85)
         if not survivors:
             raise PipelineFailure("GENERATION_FAILED", "품질 기준을 만족하는 결과를 만들지 못했습니다.")
