@@ -34,17 +34,30 @@ class PhotoService:
         # 업로드 시점 동의를 기록 (동의 이력 테이블과 일원화)
         await ConsentRepository(self.session).upsert(user_id, "image_processing", True)
 
+        # 업로드 크기 제한 (DoS·스토리지 남용 방지)
+        max_bytes = self.settings.max_upload_mb * 1024 * 1024
+        if len(data) > max_bytes:
+            raise AppError(
+                f"이미지가 너무 큽니다 (최대 {self.settings.max_upload_mb}MB).",
+                code="VALIDATION_ERROR",
+                status_code=413,
+            )
+
         try:
             with Image.open(io.BytesIO(data)) as im:
                 im.verify()
+            # 재인코딩으로 EXIF(GPS·기기정보 등) 메타데이터 제거 + 파일 포맷 정규화
             with Image.open(io.BytesIO(data)) as im:
-                width, height = im.size
-                fmt = (im.format or "JPEG").lower()
+                clean = im.convert("RGB")
+                width, height = clean.size
+                buf = io.BytesIO()
+                clean.save(buf, format="JPEG", quality=92)
+                data = buf.getvalue()
         except UnidentifiedImageError as exc:
             raise InvalidPhotoError("이미지 파일이 아닙니다.") from exc
 
         photo_id = uuid.uuid4()
-        key = f"photos/{user_id}/{photo_id}.{'jpg' if fmt == 'jpeg' else fmt}"
+        key = f"photos/{user_id}/{photo_id}.jpg"
         self.storage.save(key, data)
 
         photo = await self.photos.create(
