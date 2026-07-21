@@ -66,6 +66,24 @@ CURATED = {
     "knit_sweater.jpg": ("크림 프린지 니트 판초", "MUSE", 55000, "romantic", "cream", "solid", "regular", "knit"),
 }
 
+
+# 실사진 상품 → 실제 무신사 상품 페이지 ('옷 링크 매칭' 기준, 구매하러 가기 연결)
+MUSINSA_URLS = {
+    "r01.png": "https://www.musinsa.com/products/5054252",  # 노드유 (가디건 반팔)
+    "r02.png": "https://www.musinsa.com/products/5313081",  # 헬레네파리스 엔젤 레터링 후드 집업
+    "r03.png": "https://www.musinsa.com/products/5406016",  # 노드유 (가디건 그레이)
+    "r04.png": "https://www.musinsa.com/products/5996770",  # 언더오프
+    "r05.png": "https://www.musinsa.com/products/6099654",  # 러기드하우스 차이나 헨리넥
+    "r06.png": "https://www.musinsa.com/products/6154816",  # 키뮤어
+    "r07.png": "https://www.musinsa.com/products/6182780",  # 러기드하우스 벗나우 풀오버
+    "r08.png": "https://www.musinsa.com/products/6326050",  # 효지
+    "r09.png": "https://www.musinsa.com/products/6449577",  # 오드민
+    "r10.png": "https://www.musinsa.com/products/6458359",  # 헬레네파리스
+    "r11.png": "https://www.musinsa.com/products/6517564",  # 미쏘
+    "r12.png": "https://www.musinsa.com/products/6575824",  # 브렌슨 컴포트 배색 롤업
+    "r13.png": "https://www.musinsa.com/products/6652860",  # 유니온블루
+}
+
 # 파일명 힌트 사전 (영문 토큰 → 한글)
 COLORS = {
     "white": "화이트", "black": "블랙", "ivory": "아이보리", "navy": "네이비",
@@ -199,6 +217,9 @@ async def seed() -> None:
                 else key  # 응답 시점 presigned 변환
             )
             fields = build_product_fields(category, filename)
+            product_url = MUSINSA_URLS.get(
+                filename, f"https://shop.partner-shop.example/products/{external_id}"
+            )
             text = (
                 f"{fields['title']} {fields['brand']} {category} "
                 + " ".join(str(v) for v in fields["attributes"].values())
@@ -219,7 +240,7 @@ async def seed() -> None:
                     category=category,
                     currency="KRW",
                     stock_status="in_stock",
-                    product_url=f"https://shop.partner-shop.example/products/{external_id}",
+                    product_url=product_url,
                     **fields,
                     image_url=image_url,
                     text_embedding=embedding,
@@ -232,6 +253,7 @@ async def seed() -> None:
                 product.brand = fields["brand"]
                 product.price = fields["price"]
                 product.attributes = fields["attributes"]
+                product.product_url = product_url
                 product.image_url = image_url
                 product.text_embedding = embedding
                 updated += 1
