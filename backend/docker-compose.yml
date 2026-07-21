@@ -2,7 +2,9 @@ version: "2.4"
 
 services:
   api:
-    build: .
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - "8000:8000"
@@ -17,7 +19,9 @@ services:
         condition: service_started
 
   worker:
-    build: .
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
     command: celery -A app.workers.celery_app worker --beat --loglevel=info
     env_file: .env
     volumes:

@@ -1,3 +1,4 @@
+# 빌드 컨텍스트 = 레포 루트 기준 (Cloudtype: -f backend/Dockerfile . / 로컬 compose: context ..)
 FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED=1 \
@@ -5,13 +6,13 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /code
 
-COPY requirements.txt .
+COPY backend/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY backend/ .
 
 EXPOSE 8000
 
-# 기본: API 서버 (마이그레이션 후 기동). compose/Cloudtype에서 command로 덮어쓸 수 있음
-# worker는: celery -A app.workers.celery_app worker --beat --loglevel=info
+# 기본: API 서버 (마이그레이션 후 기동). compose/Cloudtype worker는 command로 덮어씀
+# worker: celery -A app.workers.celery_app worker --beat --loglevel=info
 CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]

@@ -1,0 +1,9 @@
+.git
+**/.env
+**/.env.cloudtype
+**/__pycache__
+**/.pytest_cache
+frontend/.dart_tool
+frontend/build
+media
+backend/media
