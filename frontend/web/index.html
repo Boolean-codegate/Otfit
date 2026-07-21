@@ -18,7 +18,8 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="OTFIT — AI 피팅으로 비포에서 애프터로">
+  <meta name="theme-color" content="#7C4DFF">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -33,6 +34,20 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <!-- 과거 배포(PWA 시절)가 등록한 서비스워커가 남아 있으면 캐시된 옛 버전이
+       계속 뜬다 (특히 모바일). 발견 즉시 해제하고 Cache Storage를 비운다. -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        regs.forEach(function (reg) { reg.unregister(); });
+      });
+    }
+    if (window.caches && caches.keys) {
+      caches.keys().then(function (keys) {
+        keys.forEach(function (key) { caches.delete(key); });
+      });
+    }
+  </script>
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader

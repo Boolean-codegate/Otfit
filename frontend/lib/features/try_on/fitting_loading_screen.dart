@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -19,10 +20,32 @@ class FittingLoadingScreen extends ConsumerStatefulWidget {
 class _FittingLoadingScreenState extends ConsumerState<FittingLoadingScreen> {
   bool _started = false;
 
+  /// 기다리는 동안 순환 노출되는 안내 — 소요 시간(2~5분)을 반복해서 알려준다.
+  static const _hints = [
+    '⏳ 생성에는 보통 2~5분 정도 걸려요',
+    '✨ 얼굴·체형·배경은 그대로, 옷만 자연스럽게 바뀌어요',
+    '☕ 잠깐 스트레칭하고 오셔도 좋아요 — 2~5분이면 완성!',
+    '📂 완성된 결과는 마이 → 내 피팅 기록에 저장돼요',
+    '💜 완성되면 피드에 비포 → 애프터로 자랑해보세요',
+  ];
+  int _hintIndex = 0;
+  Timer? _hintTimer;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _start());
+    _hintTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (mounted) {
+        setState(() => _hintIndex = (_hintIndex + 1) % _hints.length);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _hintTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _start() async {
@@ -163,7 +186,33 @@ class _FittingLoadingScreenState extends ConsumerState<FittingLoadingScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 18),
+                          // 순환 안내 문구 (2~5분 소요 안내 포함)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: AppColors.lightPurple,
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 350),
+                              child: Text(
+                                _hints[_hintIndex],
+                                key: ValueKey(_hintIndex),
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: AppColors.primaryPurple,
+                                      fontWeight: FontWeight.w700,
+                                      height: 1.4,
+                                    ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
                           TextButton.icon(
                             onPressed: _requestExit,
                             icon: const Icon(Icons.close_rounded),
@@ -287,11 +336,16 @@ class _ScanningMarkState extends State<_ScanningMark>
                 color: AppColors.surface,
                 shape: BoxShape.circle,
               ),
-              child: const Center(
-                child: Icon(
-                  Icons.auto_awesome_rounded,
-                  size: 42,
-                  color: AppColors.primaryPurple,
+              child: Center(
+                child: Image.asset(
+                  'assets/images/otfit_symbol.png',
+                  width: 54,
+                  height: 54,
+                  errorBuilder: (_, _, _) => const Icon(
+                    Icons.auto_awesome_rounded,
+                    size: 42,
+                    color: AppColors.primaryPurple,
+                  ),
                 ),
               ),
             ),

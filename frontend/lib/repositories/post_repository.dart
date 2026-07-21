@@ -12,11 +12,13 @@ abstract class PostRepository {
   });
 
   /// result_id가 있으면 after/product는 서버가 결과에서 자동 결정.
+  /// 비포는 URL 전달 대신 includeBefore 플래그 — 서버가 원본 사진 키를 사용
+  /// (presigned URL이 DB에 저장되어 만료되는 것을 방지).
   Future<Post> createPost({
     String? resultId,
     String? productId,
     String caption = '',
-    String? beforeUrl,
+    bool includeBefore = false,
     String? afterUrl,
   });
 
@@ -100,14 +102,15 @@ class MockPostRepository implements PostRepository {
     String? resultId,
     String? productId,
     String caption = '',
-    String? beforeUrl,
+    bool includeBefore = false,
     String? afterUrl,
   }) async {
     final post = Post(
       id: 'po_mock_${++_sequence}',
       author: const PostAuthor(id: 'u_mock_1', nickname: '오핏'),
       caption: caption,
-      beforeUrl: beforeUrl,
+      beforeUrl:
+          includeBefore ? 'assets/images/mock/try_on_result_01.png' : null,
       afterUrl: afterUrl ?? 'assets/images/mock/try_on_result_01.png',
       product: productId == null ? mockProducts.first : mockProductById(productId),
       buyVotes: 0,

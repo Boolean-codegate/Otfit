@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 
 import '../../models/fitting_result.dart' show ApiError, ApiErrorCodes, ApiException;
-import '../config/app_config.dart';
 import 'token_storage.dart';
 
 /// dio 기반 공용 API 클라이언트.
@@ -40,7 +39,6 @@ class ApiClient {
   final void Function()? onLoggedOut;
 
   Future<void>? _refreshing;
-  Future<void>? _devLoggingIn;
 
   bool _isPublic(String path) => _publicPaths.contains(path);
 
@@ -49,11 +47,7 @@ class ApiClient {
     RequestInterceptorHandler handler,
   ) async {
     if (!_isPublic(options.path)) {
-      var access = await tokens.readAccessToken();
-      if (access == null && AppConfig.hasDevLogin) {
-        await _ensureDevLogin();
-        access = await tokens.readAccessToken();
-      }
+      final access = await tokens.readAccessToken();
       if (access != null) {
         options.headers['Authorization'] = 'Bearer $access';
       }
@@ -113,45 +107,6 @@ class ApiClient {
       refreshToken: data['refresh_token'].toString(),
     );
     // 재시도 요청에 새 토큰이 붙도록 갱신
-  }
-
-  Future<void> _ensureDevLogin() {
-    return _devLoggingIn ??= _doDevLogin().whenComplete(
-      () => _devLoggingIn = null,
-    );
-  }
-
-  Future<void> _doDevLogin() async {
-    Future<Response<Map<String, dynamic>>> attemptLogin() {
-      return dio.post<Map<String, dynamic>>(
-        '/auth/login',
-        data: <String, dynamic>{
-          'email': AppConfig.devLoginEmail,
-          'password': AppConfig.devLoginPassword,
-        },
-      );
-    }
-
-    Response<Map<String, dynamic>> response;
-    try {
-      response = await attemptLogin();
-    } on DioException catch (exception) {
-      if (exception.response?.statusCode != 401) rethrow;
-      // 미가입 계정이면 가입 후 진행 (개발 편의)
-      response = await dio.post<Map<String, dynamic>>(
-        '/auth/register',
-        data: <String, dynamic>{
-          'email': AppConfig.devLoginEmail,
-          'password': AppConfig.devLoginPassword,
-          'nickname': 'dev',
-        },
-      );
-    }
-    final data = response.data ?? const <String, dynamic>{};
-    await tokens.saveTokens(
-      accessToken: data['access_token'].toString(),
-      refreshToken: data['refresh_token'].toString(),
-    );
   }
 
   Future<void> saveSession(Map<String, dynamic> authResponse) async {

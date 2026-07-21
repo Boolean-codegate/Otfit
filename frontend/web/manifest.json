@@ -3,9 +3,9 @@
     "short_name": "OTFIT",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FFFFFF",
+    "theme_color": "#7C4DFF",
+    "description": "OTFIT — AI 피팅으로 비포에서 애프터로",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

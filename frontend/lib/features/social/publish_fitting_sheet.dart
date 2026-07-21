@@ -204,12 +204,12 @@ Future<void> showPublishFittingSheet(
             removeBefore: !includeBefore && hasBefore,
           );
     } else {
+      // URL을 보내지 않는다 — 서버가 result_id에서 애프터/비포 키를 직접 결정
       await ref.read(postRepositoryProvider).createPost(
             resultId: selected.resultId,
             productId: selected.product?.id,
             caption: captionController.text.trim(),
-            afterUrl: selected.resultUrl,
-            beforeUrl: includeBefore ? selected.sourcePhotoUrl : null,
+            includeBefore: includeBefore && hasBefore,
           );
     }
     ref.invalidate(feedProvider);

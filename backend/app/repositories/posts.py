@@ -4,7 +4,7 @@ from datetime import datetime, time, timezone
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Post, PostVote
+from app.models import Follow, Post, PostVote
 
 
 class PostRepository:
@@ -20,9 +20,16 @@ class PostRepository:
         await self.session.flush()
         return post
 
-    async def list_feed(self, *, sort: str, limit: int, offset: int) -> list[Post]:
+    async def list_feed(
+        self, *, sort: str, limit: int, offset: int, viewer_id: uuid.UUID | None = None
+    ) -> list[Post]:
         query = select(Post)
-        if sort == "hot":
+        if sort == "following" and viewer_id is not None:
+            # 내가 팔로우한 사람들의 게시물만, 최신순
+            query = query.join(Follow, Follow.followee_id == Post.user_id).where(
+                Follow.follower_id == viewer_id
+            ).order_by(Post.created_at.desc())
+        elif sort == "hot":
             query = query.order_by((Post.buy_votes + Post.skip_votes).desc(), Post.created_at.desc())
         else:  # new
             query = query.order_by(Post.created_at.desc())

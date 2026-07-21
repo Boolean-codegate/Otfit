@@ -43,7 +43,7 @@ class HttpPostRepository implements PostRepository {
     String? resultId,
     String? productId,
     String caption = '',
-    String? beforeUrl,
+    bool includeBefore = false,
     String? afterUrl,
   }) {
     return guardApi(() async {
@@ -53,7 +53,7 @@ class HttpPostRepository implements PostRepository {
           'result_id': ?resultId,
           'product_id': ?productId,
           'caption': caption,
-          'before_url': ?beforeUrl,
+          if (includeBefore) 'include_before': true,
           'after_url': ?afterUrl,
         },
       );

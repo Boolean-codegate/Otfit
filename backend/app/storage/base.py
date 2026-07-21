@@ -118,10 +118,13 @@ class S3Storage(StorageService):
     def delete(self, key: str) -> None:
         self.client.delete_object(Bucket=self.bucket, Key=key)
 
+    # 영구 공개가 의도된 키만 공개 도메인으로 서빙 (상품 카탈로그).
+    # 사용자 사진·생성 결과는 개인정보이므로 항상 유효기간이 있는 presigned URL.
+    PUBLIC_KEY_PREFIXES = ("catalog/",)
+
     def url_for(self, key: str) -> str:
-        if self.public_base_url:
+        if self.public_base_url and key.startswith(self.PUBLIC_KEY_PREFIXES):
             return f"{self.public_base_url}/{key}"
-        # 공개 도메인이 없으면 24시간 presigned URL로 대체
         return self.presigned_url(key, expires_seconds=86400)
 
     def presigned_url(self, key: str, expires_seconds: int = 3600) -> str:

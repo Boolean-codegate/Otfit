@@ -118,7 +118,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
             productId:
                 result.generationResult == null ? result.product.id : null,
             caption: controller.text.trim(),
-            beforeUrl: includeBefore ? beforePhoto?.storageUrl : null,
+            includeBefore: includeBefore,
           );
       if (!mounted) return;
       _showMessage('변신을 게시했어요! 투표 반응을 확인해보세요.');

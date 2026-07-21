@@ -24,7 +24,7 @@ async def update_post(post_id: uuid.UUID, body: PostUpdate, user: CurrentUser, s
 async def feed(
     user: CurrentUser,
     session: DbSession,
-    sort: str = Query(default="hot", pattern="^(hot|new)$"),
+    sort: str = Query(default="hot", pattern="^(hot|new|following)$"),
     limit: int = Query(default=20, ge=1, le=50),
     cursor: str | None = None,
 ):

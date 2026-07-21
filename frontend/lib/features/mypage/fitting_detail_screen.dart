@@ -111,7 +111,7 @@ class _FittingDetailScreenState extends ConsumerState<FittingDetailScreen> {
       final post = await ref.read(feedProvider.notifier).publish(
             resultId: fitting.resultId,
             caption: controller.text.trim(),
-            beforeUrl: includeBefore ? fitting.sourcePhotoUrl : null,
+            includeBefore: includeBefore && hasBefore,
           );
       ref.invalidate(myFittingsProvider);
       ref.invalidate(userPostsProvider('me'));

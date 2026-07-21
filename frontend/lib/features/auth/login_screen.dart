@@ -19,8 +19,9 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _emailController = TextEditingController(text: 'test@otfit.app');
-  final _passwordController = TextEditingController(text: 'test1234');
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _passwordConfirmController = TextEditingController();
   final _nicknameController = TextEditingController();
 
   bool _isJoinMode = false;
@@ -31,6 +32,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _passwordConfirmController.dispose();
     _nicknameController.dispose();
     super.dispose();
   }
@@ -67,6 +69,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final auth = ref.read(authSessionProvider.notifier);
     final email = _emailController.text.trim();
     final password = _passwordController.text;
+    if (_isJoinMode) {
+      if (password.length < 8) {
+        _showError('비밀번호는 8자 이상이어야 해요.');
+        return Future.value();
+      }
+      if (password != _passwordConfirmController.text) {
+        _showError('비밀번호가 일치하지 않아요.');
+        return Future.value();
+      }
+    }
     return _guard(() async {
       if (_isJoinMode) {
         final nickname = _nicknameController.text.trim();
@@ -168,9 +180,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     controller: _passwordController,
                     obscureText: true,
                     autofillHints: const [AutofillHints.password],
-                    onSubmitted: (_) => _submitEmail(),
+                    onSubmitted: _isJoinMode ? null : (_) => _submitEmail(),
                     decoration: const InputDecoration(hintText: '8자 이상'),
                   ),
+                  if (_isJoinMode) ...[
+                    const SizedBox(height: 12),
+                    _FieldLabel('비밀번호 확인'),
+                    TextField(
+                      controller: _passwordConfirmController,
+                      obscureText: true,
+                      onSubmitted: (_) => _submitEmail(),
+                      decoration:
+                          const InputDecoration(hintText: '비밀번호를 한 번 더 입력'),
+                    ),
+                  ],
                   const SizedBox(height: 22),
                   FilledButton(
                     onPressed: _submitting ? null : _submitEmail,
@@ -180,7 +203,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             height: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Text(_isJoinMode ? '가입하고 10크레딧 받기' : '로그인'),
+                        : Text(_isJoinMode ? '가입하고 3크레딧 받기' : '로그인'),
                   ),
                   const SizedBox(height: 12),
                   Center(

@@ -47,19 +47,19 @@ class FeedScreen extends ConsumerWidget {
                         ),
                         const SizedBox(width: 4),
                         _SortChip(
+                          label: '팔로우',
+                          selected: sort == 'following',
+                          onTap: () => ref
+                              .read(feedSortProvider.notifier)
+                              .setSort('following'),
+                        ),
+                        const SizedBox(width: 6),
+                        _SortChip(
                           label: '인기',
                           selected: sort == 'hot',
                           onTap: () => ref
                               .read(feedSortProvider.notifier)
                               .setSort('hot'),
-                        ),
-                        const SizedBox(width: 6),
-                        _SortChip(
-                          label: '최신',
-                          selected: sort == 'new',
-                          onTap: () => ref
-                              .read(feedSortProvider.notifier)
-                              .setSort('new'),
                         ),
                       ],
                     ),
@@ -114,19 +114,57 @@ class FeedScreen extends ConsumerWidget {
                     ),
                   ),
                   data: (posts) => posts.isEmpty
-                      ? const SliverFillRemaining(
+                      ? SliverFillRemaining(
                           child: Center(
-                            child: Text('아직 게시물이 없어요.\n피팅 결과를 처음으로 공유해보세요!'),
+                            child: Text(
+                              sort == 'following'
+                                  ? '아직 팔로우한 사람의 게시물이 없어요.\n계정을 검색해 팔로우해보세요!'
+                                  : '아직 게시물이 없어요.\n피팅 결과를 처음으로 공유해보세요!',
+                              textAlign: TextAlign.center,
+                            ),
                           ),
                         )
                       : SliverPadding(
                           padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
-                          sliver: SliverList.separated(
-                            itemCount: posts.length,
-                            separatorBuilder: (_, _) =>
-                                const SizedBox(height: 16),
-                            itemBuilder: (context, index) =>
-                                _PostCard(post: posts[index]),
+                          // PC에선 카드 3~4열 그리드, 모바일은 1열 (카드 높이가
+                          // 제각각이라 행 단위로 묶어 상단 정렬)
+                          sliver: SliverLayoutBuilder(
+                            builder: (context, constraints) {
+                              final width = constraints.crossAxisExtent;
+                              final columns = width >= 1040
+                                  ? 4
+                                  : width >= 720
+                                      ? 3
+                                      : width >= 500
+                                          ? 2
+                                          : 1;
+                              final rowCount =
+                                  (posts.length + columns - 1) ~/ columns;
+                              return SliverList.separated(
+                                itemCount: rowCount,
+                                separatorBuilder: (_, _) =>
+                                    const SizedBox(height: 16),
+                                itemBuilder: (context, rowIndex) {
+                                  final start = rowIndex * columns;
+                                  return Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      for (var i = 0; i < columns; i++) ...[
+                                        if (i > 0)
+                                          const SizedBox(width: 16),
+                                        Expanded(
+                                          child: start + i < posts.length
+                                              ? _PostCard(
+                                                  post: posts[start + i])
+                                              : const SizedBox.shrink(),
+                                        ),
+                                      ],
+                                    ],
+                                  );
+                                },
+                              );
+                            },
                           ),
                         ),
                 ),

@@ -14,13 +14,18 @@ class PostAuthor(ORMModel):
 
 
 class PostCreate(BaseModel):
-    """내 보정 결과(result_id)로 게시하거나, 데모/외부용으로 URL을 직접 지정."""
+    """내 보정 결과(result_id)로 게시하거나, 데모/외부용으로 URL을 직접 지정.
+
+    include_before=True면 결과에 연결된 원본 사진을 서버가 비포로 사용한다
+    (presigned URL을 DB에 저장하지 않기 위해 URL 대신 플래그 사용).
+    """
 
     result_id: uuid.UUID | None = None
     product_id: uuid.UUID | None = None
     caption: str = Field(default="", max_length=300)
     before_url: str | None = None
     after_url: str | None = None
+    include_before: bool = False
 
 
 class PostUpdate(BaseModel):

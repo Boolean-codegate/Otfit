@@ -38,7 +38,13 @@ class PostService:
                 raise AppError("본인의 생성 결과만 게시할 수 있습니다.", code="FORBIDDEN", status_code=403)
             after_url = after_url or result.result_storage_key
             product_id = product_id or result.product_id
-            # before(원본 사진)는 개인정보라 기본 비공개 — 사용자가 before_url을 명시할 때만 게시
+            # before(원본 사진)는 개인정보라 기본 비공개 — 사용자가 include_before로 동의할 때만.
+            # URL이 아닌 스토리지 키를 저장해 presigned 만료와 무관하게 유지한다.
+            if body.include_before and not before_url:
+                job = await self.session.get(GenerationJob, result.job_id)
+                photo = await self.session.get(Photo, job.photo_id) if job else None
+                if photo is not None:
+                    before_url = photo.storage_key
         if not after_url:
             raise AppError("after_url 또는 result_id 중 하나는 필요합니다.", code="VALIDATION_ERROR", status_code=422)
 
@@ -91,7 +97,7 @@ class PostService:
 
     # ── 피드 ──────────────────────────────────────────────
     async def feed(self, user: User, *, sort: str, limit: int, offset: int) -> list[PostOut]:
-        posts = await self.posts.list_feed(sort=sort, limit=limit, offset=offset)
+        posts = await self.posts.list_feed(sort=sort, limit=limit, offset=offset, viewer_id=user.id)
         if not posts:
             return []
         author_ids = {p.user_id for p in posts}
