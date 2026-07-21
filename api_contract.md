@@ -52,6 +52,12 @@ res 200: `{ "id": "c_1", "type": "image_processing", "granted": true, "granted_a
 
 ### GET /consents  (auth) → `{ "items": [{Consent}] }`
 
+### GET /me/export  (auth) — GDPR 접근권·이동권 (Art.15/20)
+내 데이터 전체(프로필·동의·사진 메타·생성·게시물·투표·댓글·크레딧·팔로잉)를 구조화된 JSON으로 반환.
+
+### DELETE /me  (auth) → 204 — GDPR 삭제권 (Art.17)
+계정과 모든 개인 데이터 즉시 삭제 (원본 사진·생성 결과 파일 포함). 되돌릴 수 없음 — 프론트에서 확인 다이얼로그 필수.
+
 ## 3. 사진
 ### POST /photos  (auth, multipart/form-data)
 form: `file`(이미지), `consent_image_processing`=true
