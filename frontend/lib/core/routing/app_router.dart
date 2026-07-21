@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/login_screen.dart';
 import '../../features/feed/feed_screen.dart';
 import '../../features/home/home_screen.dart';
+import '../../features/mypage/my_favorites_screen.dart';
+import '../../features/mypage/my_fittings_screen.dart';
+import '../../features/mypage/my_photos_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/photo/photo_selection_screen.dart';
 import '../../features/profile/profile_screen.dart';
@@ -88,6 +91,21 @@ final GoRouter appRouter = GoRouter(
       path: '/photo',
       pageBuilder: (context, state) =>
           _slidePage(state: state, child: const PhotoSelectionScreen()),
+    ),
+    GoRoute(
+      path: '/profile/fittings',
+      pageBuilder: (context, state) =>
+          _slidePage(state: state, child: const MyFittingsScreen()),
+    ),
+    GoRoute(
+      path: '/profile/photos',
+      pageBuilder: (context, state) =>
+          _slidePage(state: state, child: const MyPhotosScreen()),
+    ),
+    GoRoute(
+      path: '/profile/favorites',
+      pageBuilder: (context, state) =>
+          _slidePage(state: state, child: const MyFavoritesScreen()),
     ),
     GoRoute(
       path: '/shop/product/:productId',

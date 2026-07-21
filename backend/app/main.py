@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.config import get_settings
 from app.core.errors import register_error_handlers
-from app.routers import auth, consents, credits, events, generations, photos, posts, products, results
+from app.routers import auth, consents, credits, events, generations, mypage, photos, posts, products, results
 
 
 def create_app() -> FastAPI:
@@ -31,6 +31,7 @@ def create_app() -> FastAPI:
     app.include_router(photos.router)
     app.include_router(products.router)
     app.include_router(posts.router)
+    app.include_router(mypage.router)
     app.include_router(generations.router)
     app.include_router(results.router)
     app.include_router(credits.router)

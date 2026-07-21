@@ -12,10 +12,13 @@ import '../models/product.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/consent_repository.dart';
 import '../repositories/credit_repository.dart';
+import '../models/mypage.dart';
 import '../models/post.dart';
+import '../repositories/http/http_mypage_repository.dart';
 import '../repositories/http/http_post_repository.dart';
 import '../repositories/http/http_product_repository.dart';
 import '../repositories/http/http_try_on_repository.dart';
+import '../repositories/mypage_repository.dart';
 import '../repositories/post_repository.dart';
 import '../repositories/product_repository.dart';
 import '../repositories/shop_repository.dart';
@@ -80,6 +83,30 @@ final postRepositoryProvider = Provider<PostRepository>((ref) {
   return AppConfig.usesMockApi
       ? MockPostRepository()
       : HttpPostRepository(ref.watch(apiClientProvider));
+});
+
+final myPageRepositoryProvider = Provider<MyPageRepository>((ref) {
+  return AppConfig.usesMockApi
+      ? MockMyPageRepository()
+      : HttpMyPageRepository(ref.watch(apiClientProvider));
+});
+
+/// 내 피팅 기록 (계약 §11 — 서버 저장분, 새로고침해도 유지)
+final myFittingsProvider = FutureProvider<List<MyFitting>>((ref) {
+  ref.watch(authSessionProvider.select((session) => session.value?.id));
+  return ref.watch(myPageRepositoryProvider).fetchMyFittings();
+});
+
+/// 내가 업로드한 사진
+final myPhotosProvider = FutureProvider<List<Photo>>((ref) {
+  ref.watch(authSessionProvider.select((session) => session.value?.id));
+  return ref.watch(myPageRepositoryProvider).fetchMyPhotos();
+});
+
+/// 찜한 상품 목록 (서버 기준; 하트 토글 시 자동 갱신)
+final myFavoritesProvider = FutureProvider<List<Product>>((ref) {
+  ref.watch(favoriteProductIdsProvider);
+  return ref.watch(myPageRepositoryProvider).fetchFavorites();
 });
 
 /// 피드 정렬 (hot | new)
@@ -394,23 +421,58 @@ final favoriteProductIdsProvider =
 
 class FavoriteProductIdsController extends Notifier<Set<String>> {
   @override
-  Set<String> build() => <String>{
-    for (final product in mockProducts)
-      if (product.isFavorite) product.id,
-  };
+  Set<String> build() {
+    // 계정이 바뀌면 다시 로드
+    ref.watch(authSessionProvider.select((session) => session.value?.id));
+    if (AppConfig.usesMockApi) {
+      return <String>{
+        for (final product in mockProducts)
+          if (product.isFavorite) product.id,
+      };
+    }
+    Future.microtask(_loadFromServer);
+    return <String>{};
+  }
 
-  void toggle(String productId) {
+  Future<void> _loadFromServer() async {
+    try {
+      final favorites =
+          await ref.read(myPageRepositoryProvider).fetchFavorites();
+      state = Set<String>.unmodifiable({
+        for (final product in favorites) product.id,
+      });
+    } on Object {
+      // 미로그인 등 — 빈 상태 유지
+    }
+  }
+
+  void _apply(String productId, {required bool isFavorite}) {
     final next = Set<String>.of(state);
-    next.contains(productId) ? next.remove(productId) : next.add(productId);
+    isFavorite ? next.add(productId) : next.remove(productId);
     state = Set<String>.unmodifiable(next);
+  }
+
+  /// 낙관적 토글 + 서버 반영 (실패 시 롤백)
+  void toggle(String productId) {
+    final adding = !state.contains(productId);
+    _apply(productId, isFavorite: adding);
+    final repository = ref.read(myPageRepositoryProvider);
+    unawaited(() async {
+      try {
+        adding
+            ? await repository.addFavorite(productId)
+            : await repository.removeFavorite(productId);
+      } on Object {
+        _apply(productId, isFavorite: !adding); // 롤백
+      }
+    }());
   }
 
   void toggleProduct(Product product) => toggle(product.id);
 
   void setFavorite(String productId, {required bool isFavorite}) {
-    final next = Set<String>.of(state);
-    isFavorite ? next.add(productId) : next.remove(productId);
-    state = Set<String>.unmodifiable(next);
+    if (state.contains(productId) == isFavorite) return;
+    toggle(productId);
   }
 
   void clear() => state = <String>{};
@@ -716,6 +778,7 @@ class TryOnController extends Notifier<TryOnProcessState> {
         generationResult: selectedGenerated,
       );
       ref.read(fittingResultsProvider.notifier).add(result);
+      ref.invalidate(myFittingsProvider); // 서버 피팅 기록 갱신
       ref.read(currentFittingResultProvider.notifier).setResult(result);
       state = TryOnProcessState(
         status: TryOnStatus.completed,

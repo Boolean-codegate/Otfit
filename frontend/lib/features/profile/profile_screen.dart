@@ -59,7 +59,7 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                       ),
                       TextButton(
-                        onPressed: () => _showComingSoon(context, '전체 기록'),
+                        onPressed: () => context.push('/profile/fittings'),
                         child: const Text('전체 보기'),
                       ),
                     ],
@@ -110,17 +110,17 @@ class ProfileScreen extends ConsumerWidget {
                       _MenuItem(
                         icon: Icons.auto_awesome_motion_outlined,
                         label: '내 피팅 기록',
-                        onTap: () => _showComingSoon(context, '내 피팅 기록'),
+                        onTap: () => context.push('/profile/fittings'),
                       ),
                       _MenuItem(
                         icon: Icons.favorite_border_rounded,
                         label: '찜한 상품',
-                        onTap: () => context.go('/shop'),
+                        onTap: () => context.push('/profile/favorites'),
                       ),
                       _MenuItem(
                         icon: Icons.photo_outlined,
                         label: '저장한 사진',
-                        onTap: () => _showComingSoon(context, '저장한 사진'),
+                        onTap: () => context.push('/profile/photos'),
                       ),
                       _MenuItem(
                         icon: Icons.workspace_premium_outlined,

@@ -2,6 +2,7 @@ from app.db.base import Base
 from app.models.consent import Consent
 from app.models.credit import CreditTransaction
 from app.models.event import Event
+from app.models.favorite import Favorite
 from app.models.generation import GenerationJob, GenerationResult
 from app.models.partner import Partner
 from app.models.photo import Photo
@@ -16,6 +17,7 @@ __all__ = [
     "Consent",
     "CreditTransaction",
     "Event",
+    "Favorite",
     "GenerationJob",
     "GenerationResult",
     "Partner",
