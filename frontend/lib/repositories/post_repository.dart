@@ -40,6 +40,14 @@ abstract class PostRepository {
     required String postId,
     required String content,
   });
+
+  /// 계약 §9 POST /reports — 게시물/댓글 신고 (detail은 '기타' 직접 입력).
+  Future<void> report({
+    required String targetType,
+    required String targetId,
+    required String reason,
+    String? detail,
+  });
 }
 
 class MockPostRepository implements PostRepository {
@@ -186,5 +194,13 @@ class MockPostRepository implements PostRepository {
     }
     return comment;
   }
+
+  @override
+  Future<void> report({
+    required String targetType,
+    required String targetId,
+    required String reason,
+    String? detail,
+  }) async {}
 }
 

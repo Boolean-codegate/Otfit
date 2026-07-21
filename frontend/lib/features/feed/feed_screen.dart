@@ -7,6 +7,7 @@ import '../../core/widgets/before_after_image.dart';
 import '../../core/widgets/responsive_content.dart';
 import '../../models/post.dart';
 import '../../providers/app_providers.dart';
+import 'report_sheet.dart';
 
 /// SNS 피드 (계약 §10) — web-login-demo/home.html을 Flutter로 이식.
 /// 플랫폼 스토리바 + 인기/최신 정렬 + 게시물 카드(살까/말까 투표, 상품 연결).
@@ -279,6 +280,21 @@ class _PostCard extends ConsumerWidget {
                   style: textTheme.labelSmall
                       ?.copyWith(color: AppColors.disabled),
                 ),
+                if (ref.watch(authSessionProvider).value?.id !=
+                    post.author.id)
+                  IconButton(
+                    tooltip: '신고',
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.flag_outlined,
+                        size: 18, color: AppColors.disabled),
+                    onPressed: () => showReportSheet(
+                      context,
+                      ref,
+                      targetType: 'post',
+                      targetId: post.id,
+                      title: '게시물 신고',
+                    ),
+                  ),
               ],
             ),
           ),
@@ -604,6 +620,21 @@ class CommentsSheetState extends ConsumerState<CommentsSheet> {
                                 ],
                               ),
                             ),
+                            if (ref.watch(authSessionProvider).value?.id !=
+                                comment.author.id)
+                              IconButton(
+                                tooltip: '댓글 신고',
+                                visualDensity: VisualDensity.compact,
+                                icon: const Icon(Icons.flag_outlined,
+                                    size: 16, color: AppColors.disabled),
+                                onPressed: () => showReportSheet(
+                                  context,
+                                  ref,
+                                  targetType: 'comment',
+                                  targetId: comment.id,
+                                  title: '댓글 신고',
+                                ),
+                              ),
                           ],
                         ),
                       );

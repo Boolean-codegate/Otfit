@@ -181,7 +181,8 @@ req: `{ "amount": 50 }` → res 200: `{ "balance": 80, "transaction_id": "tx_1" 
 
 ## 9. 신고
 ### POST /reports  (auth)
-req: `{ "target_type": "photo|result", "target_id": "…", "reason": "…" }` → 202 `{ "ok": true }`
+req: `{ "target_type": "photo|result|post|comment", "target_id": "…", "reason": "inappropriate|spam|copyright|other", "detail": "…"? }` → 202 `{ "ok": true }`
+- `reason=other`면 `detail`에 직접 입력 사유. 접수 시 관리자 웹훅 알림(ADMIN_ALERT_WEBHOOK).
 
 ---
 

@@ -16,5 +16,7 @@ async def create_event(body: EventCreateRequest, user: CurrentUser, session: DbS
 
 @router.post("/reports", response_model=OkResponse, status_code=status.HTTP_202_ACCEPTED)
 async def create_report(body: ReportCreateRequest, user: CurrentUser, session: DbSession):
-    await ReportService(session).create(user.id, body.target_type, body.target_id, body.reason, None)
+    await ReportService(session).create(
+        user.id, body.target_type, body.target_id, body.reason, body.detail
+    )
     return {"ok": True}

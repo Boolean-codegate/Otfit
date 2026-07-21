@@ -10,6 +10,7 @@ import 'publish_fitting_sheet.dart';
 import '../../models/social.dart';
 import '../../providers/app_providers.dart';
 import '../feed/feed_screen.dart' show CommentsSheet;
+import '../feed/report_sheet.dart';
 
 /// 인스타그램형 유저 피드 (계약 §12).
 /// 헤더(게시물/팔로워/팔로잉 + 팔로우 버튼) + 3열 그리드.
@@ -680,7 +681,18 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                         color: AppColors.error),
                     onPressed: _delete,
                   ),
-                ],
+                ] else
+                  IconButton(
+                    tooltip: '신고',
+                    icon: const Icon(Icons.flag_outlined),
+                    onPressed: () => showReportSheet(
+                      context,
+                      ref,
+                      targetType: 'post',
+                      targetId: _post.id,
+                      title: '게시물 신고',
+                    ),
+                  ),
                 IconButton(
                   icon: const Icon(Icons.close_rounded),
                   onPressed: () => Navigator.of(context).pop(),

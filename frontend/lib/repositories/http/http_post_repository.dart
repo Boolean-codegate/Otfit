@@ -62,6 +62,26 @@ class HttpPostRepository implements PostRepository {
   }
 
   @override
+  Future<void> report({
+    required String targetType,
+    required String targetId,
+    required String reason,
+    String? detail,
+  }) {
+    return guardApi(() async {
+      await _client.dio.post<Map<String, dynamic>>(
+        '/reports',
+        data: <String, dynamic>{
+          'target_type': targetType,
+          'target_id': targetId,
+          'reason': reason,
+          'detail': ?detail,
+        },
+      );
+    });
+  }
+
+  @override
   Future<Post> updatePost({
     required String postId,
     String? caption,

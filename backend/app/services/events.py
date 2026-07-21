@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Event, Report
 from app.repositories.events import EventRepository
+from app.services.admin_alerts import notify_admin
 
 
 class EventService:
@@ -44,4 +45,9 @@ class ReportService:
             detail=detail,
         )
         await self.session.commit()
+        # 신고 접수를 관리자에게도 알림 (웹훅 미설정 시 로그만)
+        await notify_admin(
+            f"🚩 신고 접수 — 대상: {target_type}({target_id}), 사유: {reason}"
+            + (f", 상세: {detail[:120]}" if detail else "")
+        )
         return report
