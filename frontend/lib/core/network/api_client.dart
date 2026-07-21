@@ -19,7 +19,8 @@ class ApiClient {
          BaseOptions(
            baseUrl: baseUrl,
            connectTimeout: const Duration(seconds: 10),
-           receiveTimeout: const Duration(seconds: 30),
+           // live 모드에서 analyze(Sol 비전)가 30초를 넘길 수 있어 넉넉히 잡는다
+           receiveTimeout: const Duration(seconds: 180),
          ),
        ) {
     dio.interceptors.add(

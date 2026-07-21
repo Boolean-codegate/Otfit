@@ -482,8 +482,10 @@ class TryOnController extends Notifier<TryOnProcessState> {
       );
       if (!_isCurrent(token)) return null;
 
+      // 실 API(gpt-image-2 경로)는 생성에 2~3분 걸릴 수 있어 폴링 한도를 넉넉히 잡는다
+      final maxPollAttempts = AppConfig.usesMockApi ? 30 : 120;
       var pollAttempts = 0;
-      while (!job.isTerminal && pollAttempts < 30) {
+      while (!job.isTerminal && pollAttempts < maxPollAttempts) {
         await Future<void>.delayed(pollInterval);
         if (!_isCurrent(token)) return null;
         job = await repository.getGenerationJob(job.jobId);
