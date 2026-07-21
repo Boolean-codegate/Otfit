@@ -39,8 +39,9 @@ class Settings(BaseSettings):
 
     provider_mode: str = "mock"  # mock | live (전역 기본값)
     # 컴포넌트별 오버라이드: mock | live. 비우면 provider_mode를 따른다.
+    # GENERATION_PROVIDER는 추가로 segmind(=live) | openai(gpt-image-1) 선택 가능.
     # 예) 분석·추천은 mock, 생성만 Segmind 실호출(하이브리드 데모):
-    #     VISION_PROVIDER=mock EMBEDDING_PROVIDER=mock GENERATION_PROVIDER=live
+    #     VISION_PROVIDER=mock EMBEDDING_PROVIDER=mock GENERATION_PROVIDER=segmind
     vision_provider: str = ""
     embedding_provider: str = ""
     generation_provider: str = ""
@@ -50,6 +51,8 @@ class Settings(BaseSettings):
     segmind_timeout_seconds: float = 30.0
     segmind_steps: int = 30
     openai_api_key: str = ""
+    # Responses API image_generation 경로는 3분 이상 걸릴 수 있음 (env로 조정)
+    openai_image_timeout_seconds: float = 300.0
     vision_model: str = "gpt-5.6-sol"  # 분석·판단(두뇌): 텍스트+이미지 → structured output
     image_model: str = "gpt-image-1"  # 픽셀 생성(손): 마스크 인페인팅
     embedding_model: str = "text-embedding-3-small"
@@ -66,6 +69,10 @@ class Settings(BaseSettings):
     quality_score_threshold: float = 0.6
     face_similarity_threshold: float = 0.85  # 정체성 보존 판정 (live 품질검사)
     generation_max_retries: int = 2  # 품질 미달 시 재생성 횟수
+    # False면 품질/정체성 게이트를 '기록만' 하고 결과를 항상 저장·노출 (실험용)
+    quality_gate_enforce: bool = True
+    # Celery 생성 태스크 hard time limit (soft는 -30초)
+    generation_task_time_limit_seconds: int = 600
 
     disclaimer: str = "본 이미지는 스타일링 시각화이며 실제 핏·사이즈를 보증하지 않습니다."
 

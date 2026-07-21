@@ -33,10 +33,16 @@ def get_embedding_provider() -> EmbeddingProvider:
 
 @lru_cache
 def get_generation_provider() -> GenerationProvider:
-    if get_settings().resolved_provider("generation") == "live":
+    # GENERATION_PROVIDER: mock | live(=segmind) | segmind | openai
+    mode = get_settings().resolved_provider("generation")
+    if mode in ("live", "segmind"):
         from app.providers.segmind.generation import SegmindGenerationProvider
 
         return SegmindGenerationProvider()
+    if mode == "openai":
+        from app.providers.openai.generation import OpenAIGenerationProvider
+
+        return OpenAIGenerationProvider()
     from app.providers.mock.generation import MockGenerationProvider
 
     return MockGenerationProvider()

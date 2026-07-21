@@ -7,15 +7,13 @@
 - 응답은 이미지 바이너리. 인터페이스(swap_garment → bytes)는 mock과 동일하므로
   저장(result_storage_key)은 기존 파이프라인이 담당한다.
 """
-import asyncio
-import hashlib
 import logging
 
 import httpx
 
 from app.core.config import get_settings
 from app.providers.base import GarmentSpec, GenerationProvider, VisionAnalysis
-from app.storage.base import S3Storage, build_s3_storage, get_storage
+from app.providers.publish import publish_photo_url
 
 logger = logging.getLogger(__name__)
 
@@ -49,19 +47,10 @@ class SegmindGenerationProvider(GenerationProvider):
         if not settings.segmind_api_key:
             raise RuntimeError("SEGMIND_API_KEY is required in live mode")
         self.settings = settings
-        # 메인 스토리지가 s3면 그대로, local이면 presigned URL용 S3(R2)를 따로 연다
-        storage = get_storage()
-        self._input_storage: S3Storage = (
-            storage if isinstance(storage, S3Storage) else build_s3_storage()
-        )
 
     async def _publish_human_image(self, photo_bytes: bytes) -> str:
-        """사용자 사진을 R2에 올리고 presigned URL 반환 (해시 키로 중복 업로드 방지)."""
-        digest = hashlib.sha256(photo_bytes).hexdigest()[:32]
-        key = f"vton-inputs/{digest}.jpg"
-        if not await asyncio.to_thread(self._input_storage.exists, key):
-            await asyncio.to_thread(self._input_storage.save, key, photo_bytes)
-        return self._input_storage.presigned_url(key, _INPUT_URL_TTL_SECONDS)
+        """사용자 사진 → R2 presigned URL (공용 헬퍼: app/providers/publish.py)."""
+        return await publish_photo_url(photo_bytes, _INPUT_URL_TTL_SECONDS)
 
     async def generate_from_urls(
         self,
