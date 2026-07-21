@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../models/mypage.dart';
+
 import '../../features/auth/login_screen.dart';
 import '../../features/feed/feed_screen.dart';
 import '../../features/home/home_screen.dart';
+import '../../features/mypage/fitting_detail_screen.dart';
 import '../../features/mypage/my_favorites_screen.dart';
 import '../../features/mypage/my_fittings_screen.dart';
 import '../../features/mypage/my_photos_screen.dart';
@@ -96,6 +99,13 @@ final GoRouter appRouter = GoRouter(
       path: '/profile/fittings',
       pageBuilder: (context, state) =>
           _slidePage(state: state, child: const MyFittingsScreen()),
+    ),
+    GoRoute(
+      path: '/profile/fittings/detail',
+      pageBuilder: (context, state) => _slidePage(
+        state: state,
+        child: FittingDetailScreen(fitting: state.extra! as MyFitting),
+      ),
     ),
     GoRoute(
       path: '/profile/photos',

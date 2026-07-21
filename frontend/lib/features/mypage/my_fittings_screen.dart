@@ -76,9 +76,7 @@ class _FittingTile extends StatelessWidget {
         side: const BorderSide(color: AppColors.divider),
       ),
       child: InkWell(
-        onTap: product == null
-            ? null
-            : () => context.push('/shop/product/${product.id}'),
+        onTap: () => context.push('/profile/fittings/detail', extra: fitting),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

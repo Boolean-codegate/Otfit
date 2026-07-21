@@ -5,13 +5,13 @@
 """
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError, NotFoundError
-from app.models import GenerationJob, GenerationResult, Partner, Post, Product, User
+from app.models import GenerationJob, GenerationResult, Partner, Post, PostComment, Product, User
 from app.repositories.posts import PostRepository
-from app.schemas.post import PostCreate, PostOut
+from app.schemas.post import CommentOut, PostCreate, PostOut
 from app.services.credits import CreditService
 
 VOTE_REWARD_CREDITS = 1
@@ -71,8 +71,12 @@ class PostService:
                 for p in (await self.session.execute(select(Product).where(Product.id.in_(product_ids)))).scalars()
             }
         my_votes = await self.posts.votes_for_posts([p.id for p in posts], user.id)
+        comment_counts = await self._comment_counts([p.id for p in posts])
         return [
-            self._build_out(p, authors.get(p.user_id), products.get(p.product_id), my_votes.get(p.id))
+            self._build_out(
+                p, authors.get(p.user_id), products.get(p.product_id), my_votes.get(p.id),
+                comment_count=comment_counts.get(p.id, 0),
+            )
             for p in posts
         ]
 
@@ -119,10 +123,17 @@ class PostService:
         author = await self.session.get(User, post.user_id)
         product = await self.session.get(Product, post.product_id) if post.product_id else None
         vote = await self.posts.get_vote(post.id, viewer_id)
-        return self._build_out(post, author, product, vote.choice if vote else None)
+        counts = await self._comment_counts([post.id])
+        return self._build_out(
+            post, author, product, vote.choice if vote else None,
+            comment_count=counts.get(post.id, 0),
+        )
 
     @staticmethod
-    def _build_out(post: Post, author: User | None, product: Product | None, my_vote: str | None) -> PostOut:
+    def _build_out(
+        post: Post, author: User | None, product: Product | None, my_vote: str | None,
+        comment_count: int = 0,
+    ) -> PostOut:
         return PostOut.model_validate(
             {
                 "id": post.id,
@@ -134,6 +145,44 @@ class PostService:
                 "buy_votes": post.buy_votes,
                 "skip_votes": post.skip_votes,
                 "my_vote": my_vote,
+                "comment_count": comment_count,
                 "created_at": post.created_at,
             }
+        )
+
+    async def _comment_counts(self, post_ids: list[uuid.UUID]) -> dict[uuid.UUID, int]:
+        rows = await self.session.execute(
+            select(PostComment.post_id, func.count(PostComment.id))
+            .where(PostComment.post_id.in_(post_ids))
+            .group_by(PostComment.post_id)
+        )
+        return dict(rows.all())
+
+    # ── 댓글 (계약 §10) ───────────────────────────────────
+    async def comments(self, post_id: uuid.UUID) -> list[CommentOut]:
+        post = await self.session.get(Post, post_id)
+        if post is None:
+            raise NotFoundError("게시물을 찾을 수 없습니다.")
+        rows = await self.session.execute(
+            select(PostComment, User)
+            .join(User, PostComment.user_id == User.id)
+            .where(PostComment.post_id == post_id)
+            .order_by(PostComment.created_at)
+        )
+        return [
+            CommentOut.model_validate(
+                {"id": c.id, "author": u, "content": c.content, "created_at": c.created_at}
+            )
+            for c, u in rows.all()
+        ]
+
+    async def add_comment(self, user: User, post_id: uuid.UUID, content: str) -> CommentOut:
+        post = await self.session.get(Post, post_id)
+        if post is None:
+            raise NotFoundError("게시물을 찾을 수 없습니다.")
+        comment = PostComment(post_id=post_id, user_id=user.id, content=content)
+        self.session.add(comment)
+        await self.session.commit()
+        return CommentOut.model_validate(
+            {"id": comment.id, "author": user, "content": comment.content, "created_at": comment.created_at}
         )

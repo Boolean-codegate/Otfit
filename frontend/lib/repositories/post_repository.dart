@@ -22,6 +22,13 @@ abstract class PostRepository {
 
   /// 재투표 시 선택 변경, 같은 선택은 멱등. 타인 게시물 신규 투표는 +1 크레딧(하루 3회).
   Future<VoteResult> vote({required String postId, required String choice});
+
+  Future<List<PostComment>> fetchComments(String postId);
+
+  Future<PostComment> addComment({
+    required String postId,
+    required String content,
+  });
 }
 
 class MockPostRepository implements PostRepository {
@@ -52,7 +59,9 @@ class MockPostRepository implements PostRepository {
   }
 
   final List<Post> _posts = [];
+  final Map<String, List<PostComment>> _comments = {};
   int _sequence = 2;
+  int _commentSequence = 0;
   int _rewardsToday = 0;
 
   @override
@@ -125,4 +134,29 @@ class MockPostRepository implements PostRepository {
     _rewardsToday += reward;
     return VoteResult(post: updated, rewardCredits: reward);
   }
+
+  @override
+  Future<List<PostComment>> fetchComments(String postId) async =>
+      List.unmodifiable(_comments[postId] ?? const <PostComment>[]);
+
+  @override
+  Future<PostComment> addComment({
+    required String postId,
+    required String content,
+  }) async {
+    final comment = PostComment(
+      id: 'cm_mock_${++_commentSequence}',
+      author: const PostAuthor(id: 'u_mock_1', nickname: '오핏'),
+      content: content,
+      createdAt: DateTime.now().toUtc(),
+    );
+    _comments.putIfAbsent(postId, () => []).add(comment);
+    final index = _posts.indexWhere((p) => p.id == postId);
+    if (index != -1) {
+      _posts[index] =
+          _posts[index].copyWith(commentCount: _posts[index].commentCount + 1);
+    }
+    return comment;
+  }
 }
+

@@ -192,6 +192,7 @@ res 200:
   "product": {Product} | null,
   "buy_votes": 14, "skip_votes": 3,
   "my_vote": "buy" | "skip" | null,
+  "comment_count": 5,
   "created_at": "…" }
 ```
 
@@ -200,6 +201,12 @@ req: `{ "result_id": "r_1"?, "product_id": "p_1"?, "caption": "…", "before_url
 - `result_id`가 있으면 after/product를 결과에서 자동 결정 (본인 결과만 가능, before는 명시할 때만 공개)
 - `result_id`가 없으면 `after_url` 필수
 res 201: `{Post}`
+
+### GET /posts/{id}/comments  (auth)
+res 200: `{ "items": [{ "id":"cm_1", "author":{"id","nickname"}, "content":"…", "created_at":"…" }] }` (오래된 순)
+
+### POST /posts/{id}/comments  (auth)
+req: `{ "content": "…" }` (1~300자) → res 201: `{Comment}`
 
 ### POST /posts/{id}/vote  (auth)
 req: `{ "choice": "buy" | "skip" }` — 재투표 시 선택 변경, 같은 선택은 멱등.

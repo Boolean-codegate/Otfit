@@ -33,6 +33,7 @@ class PostOut(ORMModel):
     buy_votes: int
     skip_votes: int
     my_vote: Literal["buy", "skip"] | None = None
+    comment_count: int = 0
     created_at: datetime
 
     @field_validator("before_url", "after_url", mode="before")
@@ -66,3 +67,18 @@ class VoteResponse(BaseModel):
 class PlatformOut(ORMModel):
     id: uuid.UUID
     name: str
+
+
+class CommentCreate(BaseModel):
+    content: str = Field(min_length=1, max_length=300)
+
+
+class CommentOut(ORMModel):
+    id: uuid.UUID
+    author: PostAuthor
+    content: str
+    created_at: datetime
+
+
+class CommentListResponse(BaseModel):
+    items: list[CommentOut]

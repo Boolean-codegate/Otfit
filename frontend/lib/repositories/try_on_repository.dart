@@ -57,6 +57,14 @@ abstract class TryOnRepository {
     required String jobId,
     required String resultId,
   });
+
+  /// Mirrors POST /results/{id}/export — 다운로드 가능한 URL을 반환.
+  Future<({String url, bool watermarked})> exportResult({
+    required String resultId,
+    String? ratio,
+    bool hiRes = false,
+    bool removeWatermark = false,
+  });
 }
 
 class MockTryOnRepository extends TryOnRepository {
@@ -319,6 +327,17 @@ class MockTryOnRepository extends TryOnRepository {
 
   void _requirePhoto(String photoId) {
     if (!_photos.containsKey(photoId)) throw _notFound('photo_id', photoId);
+  }
+
+  @override
+  Future<({String url, bool watermarked})> exportResult({
+    required String resultId,
+    String? ratio,
+    bool hiRes = false,
+    bool removeWatermark = false,
+  }) async {
+    await _wait();
+    return (url: 'assets/images/mock/try_on_result_01.png', watermarked: true);
   }
 
   ApiException _notFound(String field, String id) => ApiException(

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/gradient_primary_button.dart';
@@ -30,6 +31,35 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
   void _retry() {
     ref.read(tryOnProgressProvider.notifier).reset();
     context.go('/try-on');
+  }
+
+  /// 결과 이미지를 내보내기(export) 후 브라우저로 다운로드/열기.
+  Future<void> _downloadResult(FittingResult result) async {
+    final resultId = result.generationResult?.id;
+    if (resultId == null) {
+      _showMessage('데모 결과는 다운로드를 지원하지 않아요.');
+      return;
+    }
+    try {
+      _showMessage('이미지를 준비하고 있어요…');
+      final export = await ref
+          .read(tryOnRepositoryProvider)
+          .exportResult(resultId: resultId, ratio: '4:5');
+      if (!mounted) return;
+      if (export.url.startsWith('http')) {
+        await launchUrl(
+          Uri.parse(export.url),
+          mode: LaunchMode.externalApplication,
+        );
+        _showMessage(export.watermarked
+            ? '새 탭에서 이미지를 저장하세요. (무료 플랜은 워터마크 포함)'
+            : '새 탭에서 이미지를 저장하세요.');
+      } else {
+        _showMessage('다운로드 URL을 만들지 못했어요.');
+      }
+    } on Object catch (error) {
+      if (mounted) _showMessage('다운로드 실패: $error');
+    }
   }
 
   /// 피팅 결과를 SNS 피드에 게시 (계약 §10 POST /posts).
@@ -120,7 +150,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
       bottomNavigationBar: result == null
           ? null
           : _ResultBottomActions(
-              onSave: () => _showMessage('사진 저장 기능은 플랫폼 연결 후 제공될 예정이에요.'),
+              onSave: () => _downloadResult(result),
               onShare: () => _publishToFeed(result),
               onOther: () => context.go('/shop'),
               onPurchase: _showPurchaseNotice,

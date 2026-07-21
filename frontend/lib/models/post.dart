@@ -28,6 +28,7 @@ class Post {
     required this.buyVotes,
     required this.skipVotes,
     this.myVote,
+    this.commentCount = 0,
     required this.createdAt,
   });
 
@@ -40,6 +41,7 @@ class Post {
   final int buyVotes;
   final int skipVotes;
   final String? myVote; // buy | skip | null
+  final int commentCount;
   final DateTime createdAt;
 
   factory Post.fromJson(Map<String, dynamic> json) => Post(
@@ -56,12 +58,18 @@ class Post {
         buyVotes: (json['buy_votes'] as num?)?.toInt() ?? 0,
         skipVotes: (json['skip_votes'] as num?)?.toInt() ?? 0,
         myVote: json['my_vote']?.toString(),
+        commentCount: (json['comment_count'] as num?)?.toInt() ?? 0,
         createdAt:
             DateTime.tryParse(json['created_at']?.toString() ?? '')?.toUtc() ??
                 DateTime.now().toUtc(),
       );
 
-  Post copyWith({int? buyVotes, int? skipVotes, Object? myVote = _unset}) {
+  Post copyWith({
+    int? buyVotes,
+    int? skipVotes,
+    Object? myVote = _unset,
+    int? commentCount,
+  }) {
     return Post(
       id: id,
       author: author,
@@ -72,6 +80,7 @@ class Post {
       buyVotes: buyVotes ?? this.buyVotes,
       skipVotes: skipVotes ?? this.skipVotes,
       myVote: identical(myVote, _unset) ? this.myVote : myVote as String?,
+      commentCount: commentCount ?? this.commentCount,
       createdAt: createdAt,
     );
   }
@@ -116,4 +125,31 @@ class VoteResult {
 
   final Post post;
   final int rewardCredits;
+}
+
+
+@immutable
+class PostComment {
+  const PostComment({
+    required this.id,
+    required this.author,
+    required this.content,
+    required this.createdAt,
+  });
+
+  final String id;
+  final PostAuthor author;
+  final String content;
+  final DateTime createdAt;
+
+  factory PostComment.fromJson(Map<String, dynamic> json) => PostComment(
+        id: (json['id'] ?? '').toString(),
+        author: PostAuthor.fromJson(
+          Map<String, dynamic>.from(json['author'] as Map),
+        ),
+        content: (json['content'] ?? '').toString(),
+        createdAt:
+            DateTime.tryParse(json['created_at']?.toString() ?? '')?.toUtc() ??
+                DateTime.now().toUtc(),
+      );
 }

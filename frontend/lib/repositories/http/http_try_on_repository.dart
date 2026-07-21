@@ -117,4 +117,28 @@ class HttpTryOnRepository extends TryOnRepository {
       );
     });
   }
+
+  @override
+  Future<({String url, bool watermarked})> exportResult({
+    required String resultId,
+    String? ratio,
+    bool hiRes = false,
+    bool removeWatermark = false,
+  }) {
+    return guardApi(() async {
+      final response = await _client.dio.post<Map<String, dynamic>>(
+        '/results/$resultId/export',
+        data: <String, dynamic>{
+          'ratio': ?ratio,
+          'hi_res': hiRes,
+          'remove_watermark': removeWatermark,
+        },
+      );
+      final data = response.data ?? const <String, dynamic>{};
+      return (
+        url: (data['export_url'] ?? '').toString(),
+        watermarked: data['watermark'] == true,
+      );
+    });
+  }
 }

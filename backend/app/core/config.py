@@ -57,7 +57,7 @@ class Settings(BaseSettings):
     image_model: str = "gpt-image-1"  # 픽셀 생성(손): 마스크 인페인팅
     embedding_model: str = "text-embedding-3-small"
 
-    signup_bonus_credits: int = 10
+    signup_bonus_credits: int = 3
     generation_cost_credits: int = 1
     photo_retention_days: int = 30
     embedding_dim: int = 512

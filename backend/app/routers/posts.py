@@ -4,7 +4,7 @@ from fastapi import APIRouter, Query, status
 
 from app.core.deps import CurrentUser, DbSession
 from app.core.errors import AppError
-from app.schemas.post import FeedResponse, PlatformOut, PostCreate, PostOut, VoteRequest, VoteResponse
+from app.schemas.post import CommentCreate, CommentListResponse, CommentOut, FeedResponse, PlatformOut, PostCreate, PostOut, VoteRequest, VoteResponse
 from app.services.posts import PostService
 
 router = APIRouter(tags=["sns"])
@@ -41,3 +41,19 @@ async def vote(post_id: uuid.UUID, body: VoteRequest, user: CurrentUser, session
 @router.get("/platforms", response_model=list[PlatformOut])
 async def platforms(user: CurrentUser, session: DbSession):
     return await PostService(session).platforms()
+
+
+@router.get("/posts/{post_id}/comments", response_model=CommentListResponse)
+async def comments(post_id: uuid.UUID, user: CurrentUser, session: DbSession):
+    return {"items": await PostService(session).comments(post_id)}
+
+
+@router.post(
+    "/posts/{post_id}/comments",
+    response_model=CommentOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def add_comment(
+    post_id: uuid.UUID, body: CommentCreate, user: CurrentUser, session: DbSession
+):
+    return await PostService(session).add_comment(user, post_id, body.content)

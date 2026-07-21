@@ -44,3 +44,17 @@ class PostVote(Base, UUIDPkMixin, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
     )
     choice: Mapped[str] = mapped_column(String(10), nullable=False)  # buy | skip
+
+
+class PostComment(Base, UUIDPkMixin, TimestampMixin):
+    """게시물 댓글 (계약 §10)."""
+
+    __tablename__ = "post_comments"
+
+    post_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("posts.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    content: Mapped[str] = mapped_column(String(300), nullable=False)

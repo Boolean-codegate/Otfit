@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/fitting_history_card.dart';
+import '../../models/mypage.dart';
 import '../../providers/app_providers.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -77,7 +78,19 @@ class ProfileScreen extends ConsumerWidget {
                           width: historyCardWidth,
                           child: FittingHistoryCard(
                             result: history,
-                            onTap: () => _showComingSoon(context, '피팅 결과 상세'),
+                            onTap: () => context.push(
+                              '/profile/fittings/detail',
+                              extra: MyFitting(
+                                resultId:
+                                    history.generationResult?.id ?? history.id,
+                                jobId: '',
+                                resultUrl: history.resultImageAsset,
+                                styleLabel:
+                                    history.generationResult?.styleLabel,
+                                product: history.product,
+                                createdAt: history.createdAt.toUtc(),
+                              ),
+                            ),
                             onTryAgain: () {
                               ref
                                   .read(selectedProductProvider.notifier)

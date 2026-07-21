@@ -167,6 +167,25 @@ class FeedController extends AsyncNotifier<List<Post>> {
     return result.rewardCredits;
   }
 
+  /// 댓글 작성 후 해당 게시물 카운트 갱신
+  Future<PostComment> addComment({
+    required String postId,
+    required String content,
+  }) async {
+    final comment = await ref
+        .read(postRepositoryProvider)
+        .addComment(postId: postId, content: content);
+    final current = state.value ?? const <Post>[];
+    state = AsyncValue.data([
+      for (final post in current)
+        if (post.id == postId)
+          post.copyWith(commentCount: post.commentCount + 1)
+        else
+          post,
+    ]);
+    return comment;
+  }
+
   Future<Post> publish({
     String? resultId,
     String? productId,

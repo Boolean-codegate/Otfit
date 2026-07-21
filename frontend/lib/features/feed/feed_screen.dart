@@ -376,24 +376,55 @@ class _PostCard extends ConsumerWidget {
                 ),
               ),
             ),
-          // 투표
+          // 투표 + 댓글
           Padding(
             padding: const EdgeInsets.all(14),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
-                  child: _VoteButton(
-                    label: '살래요 👍 ${post.buyVotes}',
-                    selected: post.myVote == 'buy',
-                    onTap: () => _vote(context, ref, 'buy'),
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _VoteButton(
+                        label: '살래요 👍 ${post.buyVotes}',
+                        selected: post.myVote == 'buy',
+                        onTap: () => _vote(context, ref, 'buy'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _VoteButton(
+                        label: '글쎄요 🤔 ${post.skipVotes}',
+                        selected: post.myVote == 'skip',
+                        onTap: () => _vote(context, ref, 'skip'),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _VoteButton(
-                    label: '글쎄요 🤔 ${post.skipVotes}',
-                    selected: post.myVote == 'skip',
-                    onTap: () => _vote(context, ref, 'skip'),
+                const SizedBox(height: 8),
+                InkWell(
+                  onTap: () => showModalBottomSheet<void>(
+                    context: context,
+                    isScrollControlled: true,
+                    builder: (_) => _CommentsSheet(postId: post.id),
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.mode_comment_outlined,
+                            size: 16, color: AppColors.secondaryText),
+                        const SizedBox(width: 6),
+                        Text(
+                          post.commentCount == 0
+                              ? '첫 댓글을 남겨보세요'
+                              : '댓글 ${post.commentCount}개 보기',
+                          style: textTheme.labelMedium
+                              ?.copyWith(color: AppColors.secondaryText),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -443,6 +474,197 @@ class _VoteButton extends StatelessWidget {
                   : AppColors.secondaryText,
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 댓글 시트 (계약 §10 GET/POST /posts/{id}/comments)
+class _CommentsSheet extends ConsumerStatefulWidget {
+  const _CommentsSheet({required this.postId});
+
+  final String postId;
+
+  @override
+  ConsumerState<_CommentsSheet> createState() => _CommentsSheetState();
+}
+
+class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
+  final _controller = TextEditingController();
+  late Future<List<PostComment>> _future;
+  bool _sending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = ref.read(postRepositoryProvider).fetchComments(widget.postId);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final content = _controller.text.trim();
+    if (content.isEmpty || _sending) return;
+    setState(() => _sending = true);
+    try {
+      await ref
+          .read(feedProvider.notifier)
+          .addComment(postId: widget.postId, content: content);
+      _controller.clear();
+      setState(() {
+        _future =
+            ref.read(postRepositoryProvider).fetchComments(widget.postId);
+      });
+    } on Object catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('댓글 작성 실패: $error')));
+      }
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  String _timeAgo(DateTime time) {
+    final diff = DateTime.now().toUtc().difference(time);
+    if (diff.inMinutes < 1) return '방금 전';
+    if (diff.inHours < 1) return '${diff.inMinutes}분 전';
+    if (diff.inDays < 1) return '${diff.inHours}시간 전';
+    return '${diff.inDays}일 전';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.6,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: Row(
+                children: [
+                  Text('댓글', style: textTheme.titleLarge),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: AppColors.divider),
+            Expanded(
+              child: FutureBuilder<List<PostComment>>(
+                future: _future,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState != ConnectionState.done) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text('댓글을 불러오지 못했어요\n${snapshot.error}'));
+                  }
+                  final comments = snapshot.data ?? const <PostComment>[];
+                  if (comments.isEmpty) {
+                    return const Center(
+                        child: Text('아직 댓글이 없어요.\n첫 댓글을 남겨보세요!'));
+                  }
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
+                    itemCount: comments.length,
+                    itemBuilder: (context, index) {
+                      final comment = comments[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 14),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CircleAvatar(
+                              radius: 14,
+                              backgroundColor: AppColors.lightPurple,
+                              child: Text(
+                                comment.author.nickname.characters.first,
+                                style: const TextStyle(
+                                  color: AppColors.primaryPurple,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        comment.author.nickname,
+                                        style: textTheme.labelMedium?.copyWith(
+                                            fontWeight: FontWeight.w800),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        _timeAgo(comment.createdAt),
+                                        style: textTheme.labelSmall?.copyWith(
+                                            color: AppColors.disabled),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(comment.content,
+                                      style: textTheme.bodyMedium),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+            const Divider(height: 1, color: AppColors.divider),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      maxLength: 300,
+                      decoration: const InputDecoration(
+                        hintText: '댓글을 입력하세요',
+                        counterText: '',
+                      ),
+                      onSubmitted: (_) => _submit(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filled(
+                    onPressed: _sending ? null : _submit,
+                    icon: _sending
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.send_rounded),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

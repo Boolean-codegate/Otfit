@@ -75,4 +75,32 @@ class HttpPostRepository implements PostRepository {
       );
     });
   }
+
+  @override
+  Future<List<PostComment>> fetchComments(String postId) {
+    return guardApi(() async {
+      final response = await _client.dio
+          .get<Map<String, dynamic>>('/posts/$postId/comments');
+      final items = response.data?['items'];
+      if (items is! List) return const <PostComment>[];
+      return items
+          .whereType<Map>()
+          .map((item) => PostComment.fromJson(Map<String, dynamic>.from(item)))
+          .toList(growable: false);
+    });
+  }
+
+  @override
+  Future<PostComment> addComment({
+    required String postId,
+    required String content,
+  }) {
+    return guardApi(() async {
+      final response = await _client.dio.post<Map<String, dynamic>>(
+        '/posts/$postId/comments',
+        data: <String, dynamic>{'content': content},
+      );
+      return PostComment.fromJson(response.data ?? const <String, dynamic>{});
+    });
+  }
 }
