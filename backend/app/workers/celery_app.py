@@ -12,6 +12,8 @@ celery_app = Celery(
 )
 celery_app.conf.task_always_eager = settings.celery_task_always_eager
 celery_app.conf.timezone = "UTC"
+# beat 상태 파일은 쓰기 가능한 경로로 (Cloudtype 등 비루트/읽기전용 워킹디렉토리 대응)
+celery_app.conf.beat_schedule_filename = "/tmp/celerybeat-schedule"
 # 이미지 생성이 3분 이상 걸릴 수 있음 (Responses image_generation 경로)
 celery_app.conf.task_time_limit = settings.generation_task_time_limit_seconds
 celery_app.conf.task_soft_time_limit = max(60, settings.generation_task_time_limit_seconds - 30)
