@@ -6,6 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.config import get_settings
 from app.core.errors import register_error_handlers
+from app.core.hardening import AuthRateLimitMiddleware, SecurityHeadersMiddleware
 from app.routers import auth, consents, credits, events, generations, mypage, photos, posts, products, results
 
 
@@ -17,6 +18,16 @@ def create_app() -> FastAPI:
         version="0.1.0",
     )
     register_error_handlers(app)
+
+    if settings.secret_key == "change-me-in-production":
+        import logging
+        logging.getLogger("otfit").warning(
+            "SECRET_KEY가 기본값입니다 — 배포 환경에서는 반드시 무작위 값으로 교체하세요."
+        )
+
+    # 보안 헤더 + 인증 레이트리밋 (CORS보다 바깥에서 적용)
+    app.add_middleware(SecurityHeadersMiddleware)
+    app.add_middleware(AuthRateLimitMiddleware, limit_per_minute=settings.auth_rate_limit_per_minute)
 
     app.add_middleware(
         CORSMiddleware,
