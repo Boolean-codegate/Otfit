@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../models/product.dart';
@@ -90,20 +91,14 @@ class _ProductDetailContentState extends ConsumerState<_ProductDetailContent> {
     context.go('/try-on');
   }
 
-  void _showPurchaseNotice() {
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        icon: const Icon(Icons.shopping_bag_outlined),
-        title: const Text('구매 기능 준비 중'),
-        content: const Text('제휴 쇼핑몰 구매 페이지로 이동하는 기능은 추후 연결될 예정입니다.'),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('확인'),
-          ),
-        ],
-      ),
+  void _openPurchase() {
+    final url = _product.productUrl;
+    if (url.startsWith('http')) {
+      launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('이 옷은 아직 구매 링크가 준비되지 않았어요.')),
     );
   }
 
@@ -144,7 +139,7 @@ class _ProductDetailContentState extends ConsumerState<_ProductDetailContent> {
         ],
       ),
       bottomNavigationBar: _DetailActionBar(
-        onPurchase: _showPurchaseNotice,
+        onPurchase: _openPurchase,
         onTryOn: _startTryOn,
       ),
       body: SafeArea(

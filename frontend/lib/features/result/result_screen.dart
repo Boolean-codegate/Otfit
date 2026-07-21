@@ -128,21 +128,13 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
     }
   }
 
-  void _showPurchaseNotice() {
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        icon: const Icon(Icons.shopping_bag_outlined),
-        title: const Text('구매 페이지 연결 준비 중'),
-        content: const Text('제휴 쇼핑몰 구매 페이지로 이동하는 기능은 추후 연결될 예정입니다.'),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('확인'),
-          ),
-        ],
-      ),
-    );
+  void _openPurchase(FittingResult result) {
+    final url = result.product.productUrl;
+    if (url.startsWith('http')) {
+      launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      return;
+    }
+    _showMessage('이 옷은 아직 구매 링크가 준비되지 않았어요.');
   }
 
   @override
@@ -167,7 +159,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
               onSave: () => _downloadResult(result),
               onShare: () => _publishToFeed(result),
               onOther: () => context.go('/shop'),
-              onPurchase: _showPurchaseNotice,
+              onPurchase: () => _openPurchase(result),
             ),
       body: SafeArea(
         top: false,
