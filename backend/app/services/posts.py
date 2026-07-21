@@ -9,9 +9,9 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError, NotFoundError
-from app.models import GenerationJob, GenerationResult, Partner, Post, PostComment, Product, User
+from app.models import GenerationJob, GenerationResult, Partner, Photo, Post, PostComment, Product, User
 from app.repositories.posts import PostRepository
-from app.schemas.post import CommentOut, PostCreate, PostOut
+from app.schemas.post import CommentOut, PostCreate, PostOut, PostUpdate
 from app.services.credits import CreditService
 
 VOTE_REWARD_CREDITS = 1
@@ -50,6 +50,40 @@ class PostService:
             before_url=before_url,
             after_url=after_url,
         )
+        await self.session.commit()
+        return await self._to_out(post, viewer_id=user.id)
+
+    # ── 수정 (비포 추가/제거) ─────────────────────────────
+    async def update(self, user: User, post_id: uuid.UUID, body: PostUpdate) -> PostOut:
+        post = await self.session.get(Post, post_id)
+        if post is None:
+            raise NotFoundError("게시물을 찾을 수 없습니다.")
+        if post.user_id != user.id:
+            raise AppError("본인 게시물만 수정할 수 있습니다.", code="FORBIDDEN", status_code=403)
+
+        if body.remove_before:
+            post.before_url = None
+        elif body.before_url:
+            post.before_url = body.before_url
+        elif body.include_before:
+            # 연결된 피팅 결과의 원본 업로드 사진을 비포로
+            if post.result_id is None:
+                raise AppError(
+                    "연결된 피팅 결과가 없어 비포 사진을 찾을 수 없습니다.",
+                    code="VALIDATION_ERROR",
+                    status_code=422,
+                )
+            result = await self.session.get(GenerationResult, post.result_id)
+            job = await self.session.get(GenerationJob, result.job_id) if result else None
+            photo = await self.session.get(Photo, job.photo_id) if job else None
+            if photo is None:
+                raise AppError(
+                    "원본 사진이 삭제되어 비포를 추가할 수 없습니다.",
+                    code="VALIDATION_ERROR",
+                    status_code=422,
+                )
+            post.before_url = photo.storage_key
+
         await self.session.commit()
         return await self._to_out(post, viewer_id=user.id)
 

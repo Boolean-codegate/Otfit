@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/mypage.dart';
 import '../../providers/app_providers.dart';
+import '../social/publish_fitting_sheet.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -113,6 +114,11 @@ class ProfileScreen extends ConsumerWidget {
                         icon: Icons.grid_on_rounded,
                         label: '내 피드',
                         onTap: () => context.push('/users/me'),
+                      ),
+                      _MenuItem(
+                        icon: Icons.add_box_outlined,
+                        label: '피드에 게시하기',
+                        onTap: () => showPublishFittingSheet(context, ref),
                       ),
                       _MenuItem(
                         icon: Icons.auto_awesome_motion_outlined,

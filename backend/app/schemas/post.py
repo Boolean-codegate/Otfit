@@ -23,6 +23,17 @@ class PostCreate(BaseModel):
     after_url: str | None = None
 
 
+class PostUpdate(BaseModel):
+    """게시물 수정 — 비포 추가/제거 (본인만).
+
+    include_before=True면 연결된 피팅 결과(result_id)의 원본 사진을 비포로 사용.
+    """
+
+    before_url: str | None = None
+    include_before: bool = False
+    remove_before: bool = False
+
+
 class PostOut(ORMModel):
     id: uuid.UUID
     author: PostAuthor

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/widgets/before_after_image.dart';
 import '../../core/widgets/price_text.dart';
 import '../../core/widgets/product_image.dart';
 import '../../core/widgets/responsive_content.dart';
@@ -11,10 +12,21 @@ import '../../models/mypage.dart';
 import '../../providers/app_providers.dart';
 
 /// 피팅 결과 상세 — 기록 카드/목록에서 진입. 게시·상품 연결 액션 제공.
-class FittingDetailScreen extends ConsumerWidget {
+class FittingDetailScreen extends ConsumerStatefulWidget {
   const FittingDetailScreen({super.key, required this.fitting});
 
   final MyFitting fitting;
+
+  @override
+  ConsumerState<FittingDetailScreen> createState() =>
+      _FittingDetailScreenState();
+}
+
+class _FittingDetailScreenState extends ConsumerState<FittingDetailScreen> {
+  MyFitting get fitting => widget.fitting;
+
+  /// 이미 피드에 게시했는지 — 게시 직후에도 즉시 반영되도록 로컬 상태로 관리.
+  late String? _postId = widget.fitting.postId;
 
   Future<void> _download(BuildContext context, WidgetRef ref) async {
     try {
@@ -45,44 +57,67 @@ class FittingDetailScreen extends ConsumerWidget {
 
   Future<void> _publish(BuildContext context, WidgetRef ref) async {
     final controller = TextEditingController();
-    final caption = await showModalBottomSheet<String>(
+    final hasBefore =
+        fitting.sourcePhotoUrl != null && fitting.sourcePhotoUrl!.isNotEmpty;
+    var includeBefore = true;
+    final published = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      builder: (sheetContext) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          20, 20, 20, 20 + MediaQuery.of(sheetContext).viewInsets.bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('피드에 게시', style: Theme.of(sheetContext).textTheme.titleLarge),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              maxLength: 300,
-              maxLines: 3,
-              autofocus: true,
-              decoration: const InputDecoration(
-                hintText: '이 룩 어때요? 살까 말까 물어보세요 🙋',
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            20, 20, 20, 20 + MediaQuery.of(sheetContext).viewInsets.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('피드에 게시',
+                  style: Theme.of(sheetContext).textTheme.titleLarge),
+              const SizedBox(height: 12),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: includeBefore && hasBefore,
+                onChanged: hasBefore
+                    ? (value) => setSheetState(() => includeBefore = value)
+                    : null,
+                title: const Text('비포 사진 함께 공개'),
+                subtitle: Text(
+                  hasBefore ? '비포 → 애프터 변신을 보여줘요 ✨' : '이 결과에는 비포 사진이 없어요',
+                  style: Theme.of(sheetContext).textTheme.bodySmall,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            FilledButton(
-              onPressed: () =>
-                  Navigator.of(sheetContext).pop(controller.text.trim()),
-              child: const Text('게시하기'),
-            ),
-          ],
+              TextField(
+                controller: controller,
+                maxLength: 300,
+                maxLines: 3,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: '이 룩 어때요? 살까 말까 물어보세요 🙋',
+                ),
+              ),
+              const SizedBox(height: 8),
+              FilledButton(
+                onPressed: () => Navigator.of(sheetContext).pop(true),
+                child: const Text('게시하기'),
+              ),
+            ],
+          ),
         ),
       ),
     );
-    if (caption == null || !context.mounted) return;
+    if (published != true || !context.mounted) return;
     try {
-      await ref
-          .read(feedProvider.notifier)
-          .publish(resultId: fitting.resultId, caption: caption);
+      final post = await ref.read(feedProvider.notifier).publish(
+            resultId: fitting.resultId,
+            caption: controller.text.trim(),
+            beforeUrl: includeBefore ? fitting.sourcePhotoUrl : null,
+          );
+      ref.invalidate(myFittingsProvider);
+      ref.invalidate(userPostsProvider('me'));
+      ref.invalidate(userProfileProvider('me'));
       if (!context.mounted) return;
+      setState(() => _postId = post.id);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('피드에 게시했어요! 투표 반응을 확인해보세요.')),
       );
@@ -96,7 +131,7 @@ class FittingDetailScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final product = fitting.product;
     final date =
@@ -125,21 +160,10 @@ class FittingDetailScreen extends ConsumerWidget {
                 child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                ClipRRect(
+                BeforeAfterImage(
+                  afterUrl: fitting.resultUrl,
+                  beforeUrl: fitting.sourcePhotoUrl,
                   borderRadius: BorderRadius.circular(22),
-                  child: AspectRatio(
-                    aspectRatio: 3 / 4,
-                    child: fitting.resultUrl.startsWith('assets/')
-                        ? Image.asset(fitting.resultUrl, fit: BoxFit.cover)
-                        : Image.network(
-                            fitting.resultUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => const ColoredBox(
-                              color: AppColors.surfaceMuted,
-                              child: Icon(Icons.broken_image_outlined, size: 48),
-                            ),
-                          ),
-                  ),
                 ),
                 const SizedBox(height: 14),
                 Row(
@@ -229,11 +253,18 @@ class FittingDetailScreen extends ConsumerWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: FilledButton.icon(
-                        onPressed: () => _publish(context, ref),
-                        icon: const Icon(Icons.dynamic_feed_rounded),
-                        label: const Text('피드에 게시'),
-                      ),
+                      // 이미 게시한 결과면 중복 게시 대신 피드로 안내
+                      child: _postId != null
+                          ? FilledButton.icon(
+                              onPressed: () => context.push('/users/me'),
+                              icon: const Icon(Icons.check_circle_outline),
+                              label: const Text('피드 보러 가기'),
+                            )
+                          : FilledButton.icon(
+                              onPressed: () => _publish(context, ref),
+                              icon: const Icon(Icons.dynamic_feed_rounded),
+                              label: const Text('피드에 게시'),
+                            ),
                     ),
                     if (product != null) ...[
                       const SizedBox(width: 10),

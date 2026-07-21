@@ -202,6 +202,12 @@ req: `{ "result_id": "r_1"?, "product_id": "p_1"?, "caption": "…", "before_url
 - `result_id`가 없으면 `after_url` 필수
 res 201: `{Post}`
 
+### PATCH /posts/{id}  (auth) — 본인 게시물만 (403 FORBIDDEN)
+req: `{ "before_url": "…"?, "include_before": true?, "remove_before": true? }`
+- `include_before: true` → 연결된 피팅 결과(result_id)의 원본 사진을 비포로 추가 (결과 미연결이면 422)
+- `remove_before: true` → 비포 제거
+res 200: `{Post}`
+
 ### GET /posts/{id}/comments  (auth)
 res 200: `{ "items": [{ "id":"cm_1", "author":{"id","nickname"}, "content":"…", "created_at":"…" }] }` (오래된 순)
 
@@ -221,6 +227,7 @@ res 200:
 ```json
 { "items": [
     { "result_id": "res_1", "job_id": "job_1", "result_url": "https://…",
+      "source_photo_url": "https://…" | null, "post_id": "po_1" | null,
       "style_label": "casual", "product": {Product} | null, "created_at": "…" }
   ], "next_cursor": null }
 ```

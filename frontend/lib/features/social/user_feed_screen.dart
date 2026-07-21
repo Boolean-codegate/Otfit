@@ -4,9 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/responsive_content.dart';
-import '../../models/mypage.dart';
 import '../../models/post.dart';
 import '../../core/widgets/before_after_image.dart';
+import 'publish_fitting_sheet.dart';
 import '../../models/social.dart';
 import '../../providers/app_providers.dart';
 import '../feed/feed_screen.dart' show CommentsSheet;
@@ -38,149 +38,9 @@ class UserFeedScreen extends ConsumerWidget {
     }
   }
 
-  /// 새 게시물: 내 피팅 결과(내 사진)만 게시할 수 있다.
-  /// 애프터 = AI 변신 결과, 비포 = 내 원본 사진(선택 공개).
-  Future<void> _createPost(BuildContext context, WidgetRef ref) async {
-    final fittings = await ref.read(myFittingsProvider.future);
-    if (!context.mounted) return;
-    if (fittings.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('게시할 변신 결과가 없어요. 먼저 입혀보기로 변신해 보세요!'),
-          action: SnackBarAction(
-            label: '입혀보기',
-            onPressed: () => context.go('/try-on'),
-          ),
-        ),
-      );
-      return;
-    }
-    MyFitting selected = fittings.first;
-    var includeBefore = true;
-    final captionController = TextEditingController();
-    final published = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) => StatefulBuilder(
-        builder: (sheetContext, setSheetState) {
-          final hasBefore = selected.sourcePhotoUrl != null &&
-              selected.sourcePhotoUrl!.isNotEmpty;
-          return Padding(
-            padding: EdgeInsets.fromLTRB(
-              20, 20, 20, 20 + MediaQuery.of(sheetContext).viewInsets.bottom,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text('변신 게시하기',
-                    style: Theme.of(sheetContext).textTheme.titleLarge),
-                const SizedBox(height: 4),
-                Text(
-                  '내 피팅 결과만 게시할 수 있어요',
-                  style: Theme.of(sheetContext)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: AppColors.secondaryText),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 132,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: fittings.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 8),
-                    itemBuilder: (context, index) {
-                      final fitting = fittings[index];
-                      final isSelected =
-                          selected.resultId == fitting.resultId;
-                      return GestureDetector(
-                        onTap: () =>
-                            setSheetState(() => selected = fitting),
-                        child: Container(
-                          width: 96,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isSelected
-                                  ? AppColors.primaryPurple
-                                  : AppColors.divider,
-                              width: isSelected ? 2.5 : 1,
-                            ),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: fitting.resultUrl.startsWith('assets/')
-                              ? Image.asset(fitting.resultUrl,
-                                  fit: BoxFit.cover)
-                              : Image.network(
-                                  fitting.resultUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, _, _) => const Icon(
-                                      Icons.auto_awesome_rounded),
-                                ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 8),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  value: includeBefore && hasBefore,
-                  onChanged: hasBefore
-                      ? (value) =>
-                          setSheetState(() => includeBefore = value)
-                      : null,
-                  title: const Text('비포 사진 함께 공개'),
-                  subtitle: Text(
-                    hasBefore
-                        ? '비포 → 애프터 변신을 보여줘요 ✨'
-                        : '이 결과에는 비포 사진이 없어요',
-                    style: Theme.of(sheetContext).textTheme.bodySmall,
-                  ),
-                ),
-                TextField(
-                  controller: captionController,
-                  maxLength: 300,
-                  maxLines: 2,
-                  decoration: const InputDecoration(
-                    hintText: '이 옷 어때요? 살까 말까 물어보세요 🙋',
-                  ),
-                ),
-                const SizedBox(height: 8),
-                FilledButton(
-                  onPressed: () => Navigator.of(sheetContext).pop(true),
-                  child: const Text('게시하기'),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-    if (published != true || !context.mounted) return;
-    try {
-      await ref.read(postRepositoryProvider).createPost(
-            resultId: selected.resultId,
-            productId: selected.product?.id,
-            caption: captionController.text.trim(),
-            afterUrl: selected.resultUrl,
-            beforeUrl: includeBefore ? selected.sourcePhotoUrl : null,
-          );
-      ref.invalidate(userPostsProvider(userId));
-      ref.invalidate(userProfileProvider(userId));
-      ref.invalidate(feedProvider);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('게시했어요!')));
-      }
-    } on Object catch (error) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('게시 실패: $error')));
-      }
-    }
-  }
+  /// 새 게시물: 내 피팅 결과(내 사진)만 게시할 수 있다 — 공용 시트 재사용.
+  Future<void> _createPost(BuildContext context, WidgetRef ref) =>
+      showPublishFittingSheet(context, ref, feedUserId: userId);
 
   void _openPost(BuildContext context, WidgetRef ref, Post post, bool isMe) {
     showModalBottomSheet<void>(
@@ -667,6 +527,26 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
     }
   }
 
+  /// 게시할 때 비포를 안 붙였어도, 연결된 피팅 결과의 원본 사진으로 나중에 추가할 수 있다.
+  Future<void> _addBefore() async {
+    try {
+      final updated =
+          await ref.read(postRepositoryProvider).addBefore(_post.id);
+      setState(() => _post = updated);
+      ref.invalidate(userPostsProvider(widget.userId));
+      ref.invalidate(feedProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('비포 사진을 추가했어요 ✨')));
+      }
+    } on Object catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('비포 추가 실패: $error')));
+      }
+    }
+  }
+
   Future<void> _delete() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -743,6 +623,15 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                         beforeUrl: _post.beforeUrl,
                         borderRadius: BorderRadius.circular(16),
                       ),
+                      if (widget.isMine && _post.beforeUrl == null) ...[
+                        const SizedBox(height: 8),
+                        OutlinedButton.icon(
+                          onPressed: _addBefore,
+                          icon: const Icon(Icons.compare_arrows_rounded,
+                              size: 16),
+                          label: const Text('비포 사진 추가'),
+                        ),
+                      ],
                       if (_post.caption.isNotEmpty) ...[
                         const SizedBox(height: 12),
                         Text(_post.caption, style: textTheme.bodyMedium),

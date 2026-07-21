@@ -4,7 +4,7 @@ from fastapi import APIRouter, Query, status
 
 from app.core.deps import CurrentUser, DbSession
 from app.core.errors import AppError
-from app.schemas.post import CommentCreate, CommentListResponse, CommentOut, FeedResponse, PlatformOut, PostCreate, PostOut, VoteRequest, VoteResponse
+from app.schemas.post import CommentCreate, CommentListResponse, CommentOut, FeedResponse, PlatformOut, PostCreate, PostOut, PostUpdate, VoteRequest, VoteResponse
 from app.services.posts import PostService
 
 router = APIRouter(tags=["sns"])
@@ -13,6 +13,11 @@ router = APIRouter(tags=["sns"])
 @router.post("/posts", response_model=PostOut, status_code=status.HTTP_201_CREATED)
 async def create_post(body: PostCreate, user: CurrentUser, session: DbSession):
     return await PostService(session).create(user, body)
+
+
+@router.patch("/posts/{post_id}", response_model=PostOut)
+async def update_post(post_id: uuid.UUID, body: PostUpdate, user: CurrentUser, session: DbSession):
+    return await PostService(session).update(user, post_id, body)
 
 
 @router.get("/feed", response_model=FeedResponse)

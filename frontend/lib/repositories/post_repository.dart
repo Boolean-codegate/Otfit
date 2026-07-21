@@ -20,6 +20,9 @@ abstract class PostRepository {
     String? afterUrl,
   });
 
+  /// 계약 PATCH /posts/{id}: 연결된 피팅 결과의 원본 사진을 비포로 추가 (본인만).
+  Future<Post> addBefore(String postId);
+
   /// 재투표 시 선택 변경, 같은 선택은 멱등. 타인 게시물 신규 투표는 +1 크레딧(하루 3회).
   Future<VoteResult> vote({required String postId, required String choice});
 
@@ -107,6 +110,14 @@ class MockPostRepository implements PostRepository {
     );
     _posts.insert(0, post);
     return post;
+  }
+
+  @override
+  Future<Post> addBefore(String postId) async {
+    final index = _posts.indexWhere((p) => p.id == postId);
+    _posts[index] = _posts[index]
+        .copyWith(beforeUrl: 'assets/images/mock/try_on_result_01.png');
+    return _posts[index];
   }
 
   @override

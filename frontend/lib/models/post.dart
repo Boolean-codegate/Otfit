@@ -65,6 +65,7 @@ class Post {
       );
 
   Post copyWith({
+    String? beforeUrl,
     int? buyVotes,
     int? skipVotes,
     Object? myVote = _unset,
@@ -74,7 +75,7 @@ class Post {
       id: id,
       author: author,
       caption: caption,
-      beforeUrl: beforeUrl,
+      beforeUrl: beforeUrl ?? this.beforeUrl,
       afterUrl: afterUrl,
       product: product,
       buyVotes: buyVotes ?? this.buyVotes,

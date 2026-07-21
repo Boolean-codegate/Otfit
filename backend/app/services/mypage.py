@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.errors import NotFoundError
-from app.models import Favorite, GenerationJob, GenerationResult, Photo, Product
+from app.models import Favorite, GenerationJob, GenerationResult, Photo, Post, Product
 from app.storage.base import get_storage
 
 
@@ -33,6 +33,16 @@ class MyPageService:
                 GenerationResult.quality_score >= self.settings.quality_score_threshold,
             )
         rows = (await self.session.execute(stmt)).all()
+        # 이미 피드에 게시한 결과면 post_id를 함께 내려준다 ('피드 보러 가기' 분기)
+        result_ids = [result.id for result, _, _ in rows]
+        posted: dict[uuid.UUID, uuid.UUID] = {}
+        if result_ids:
+            post_rows = await self.session.execute(
+                select(Post.result_id, Post.id)
+                .where(Post.user_id == user_id, Post.result_id.in_(result_ids))
+                .order_by(Post.created_at)
+            )
+            posted = dict(post_rows.all())
         storage = get_storage()
         items = [
             {
@@ -40,6 +50,7 @@ class MyPageService:
                 "job_id": result.job_id,
                 "result_url": storage.url_for(result.result_storage_key),
                 "source_photo_url": storage.url_for(photo.storage_key) if photo else None,
+                "post_id": posted.get(result.id),
                 "style_label": result.style_label,
                 "product": product,
                 "created_at": result.created_at,
