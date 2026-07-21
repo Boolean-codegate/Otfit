@@ -8,3 +8,4 @@ media/
 *.egg-info/
 .idea/
 .vscode/
+celerybeat-schedule*
