@@ -8,6 +8,8 @@ class Settings(BaseSettings):
 
     app_name: str = "Otfit"
     base_url: str = "http://localhost:8000"
+    # Flutter 웹 로컬 개발 서버(포트 임의)를 허용 — 배포 시 실제 도메인 정규식으로 교체
+    cors_allow_origin_regex: str = r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
     secret_key: str = "change-me-in-production"
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 14
