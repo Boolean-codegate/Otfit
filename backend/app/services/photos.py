@@ -7,12 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.errors import AppError, ForbiddenError, InvalidPhotoError, NotFoundError
-from app.models import Photo, PhotoAnalysis
+from app.models import Photo, PhotoAnalysis, Report, User
 from app.providers.base import VisionAnalysis
 from app.providers.factory import get_vision_provider
 from app.providers.moderation import get_moderation_provider
 from app.repositories.consents import ConsentRepository
 from app.repositories.photos import PhotoRepository
+from app.services.admin_alerts import notify_admin
 from app.storage.base import get_storage
 
 
@@ -60,14 +61,23 @@ class PhotoService:
         # 유해 콘텐츠(나체·성적·폭력 등) 차단 — 저장 전 최상류에서 거부
         verdict = await get_moderation_provider().check(data)
         if verdict.flagged:
+            banned = await self._register_violation(user_id, verdict.categories)
+            message = "커뮤니티 가이드라인에 맞지 않는 이미지입니다."
+            if banned:
+                message += " 반복 위반으로 계정이 제한되었습니다."
             raise InvalidPhotoError(
-                "커뮤니티 가이드라인에 맞지 않는 이미지입니다.",
-                detail={"reject_reason": "UNSAFE_CONTENT", "categories": verdict.categories},
+                message,
+                detail={
+                    "reject_reason": "UNSAFE_CONTENT",
+                    "categories": verdict.categories,
+                    "banned": banned,
+                },
             )
 
         photo_id = uuid.uuid4()
         key = f"photos/{user_id}/{photo_id}.jpg"
         self.storage.save(key, data)
+
 
         photo = await self.photos.create(
             id=photo_id,
@@ -91,6 +101,38 @@ class PhotoService:
         if photo.user_id != user_id:
             raise ForbiddenError("본인 사진만 접근할 수 있습니다.")
         return photo
+
+    async def _register_violation(self, user_id: uuid.UUID, categories: list[str]) -> bool:
+        """유해 업로드 적발 처리: 스트라이크 누적 → 밴, 자동 신고 접수, 관리자 알림.
+
+        반환값: 이 적발로(또는 이미) 계정이 제한된 상태인지.
+        """
+        user = await self.session.get(User, user_id)
+        banned = False
+        label = "(알 수 없음)"
+        if user is not None:
+            user.moderation_strikes += 1
+            if user.moderation_strikes >= self.settings.moderation_ban_strikes:
+                user.is_banned = True
+            banned = user.is_banned
+            label = f"{user.nickname}({user.email})"
+        # 관리자가 볼 수 있게 신고함에 자동 접수
+        self.session.add(
+            Report(
+                reporter_id=user_id,
+                target_type="photo",
+                target_id=None,
+                reason="inappropriate",
+                detail=f"자동 모더레이션 적발: {', '.join(categories) or 'unknown'}",
+            )
+        )
+        await self.session.commit()
+        strikes = user.moderation_strikes if user else "?"
+        await notify_admin(
+            f"🚨 유해 이미지 업로드 적발 — {label}, 카테고리: {', '.join(categories) or 'unknown'}, "
+            f"누적 {strikes}회{' → 계정 제한됨' if banned else ''}"
+        )
+        return banned
 
     async def delete(self, user_id: uuid.UUID, photo_id: uuid.UUID) -> None:
         """사용자 요청 즉시 삭제 (개인정보 정책)."""

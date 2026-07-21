@@ -20,6 +20,8 @@ os.environ["DATABASE_URL"] = make_url(_BASE_ASYNC).set(database=_TEST_DB).render
 os.environ["SYNC_DATABASE_URL"] = make_url(_BASE_SYNC).set(database=_TEST_DB).render_as_string(hide_password=False)
 os.environ["CELERY_TASK_ALWAYS_EAGER"] = "true"
 os.environ["PROVIDER_MODE"] = "mock"
+os.environ["MODERATION_PROVIDER"] = "mock"  # 실 모더레이션 API 의존 제거
+os.environ["ADMIN_ALERT_WEBHOOK"] = ""
 os.environ["STORAGE_BACKEND"] = "local"  # 테스트는 외부(R2) 의존 없이 로컬 스토리지 고정
 os.environ["STORAGE_DIR"] = tempfile.mkdtemp(prefix="otfit-test-media-")
 

@@ -85,8 +85,10 @@ res 200 (분석은 빠르면 동기 반환, 느리면 202+job — MVP는 동기 
 검증 실패 예: `is_valid=false, reject_reason="MULTIPLE_PERSONS" | "HEAVY_OCCLUSION" | "UNSUPPORTED_POSE" | "LOW_RESOLUTION"`
 
 **유해 콘텐츠 차단**: 업로드 시 AI 모더레이션(나체·성적·폭력·혐오)이 저장 전에 실행됨.
-차단 시 `400 INVALID_PHOTO` + `detail: { "reject_reason": "UNSAFE_CONTENT", "categories": ["sexual", …] }`
+차단 시 `400 INVALID_PHOTO` + `detail: { "reject_reason": "UNSAFE_CONTENT", "categories": ["sexual", …], "banned": false }`
 — 프론트는 "커뮤니티 가이드라인에 맞지 않는 이미지" 안내 표시. (MODERATION_PROVIDER=openai 로 live 활성화)
+- 적발 시 신고함에 자동 접수 + 관리자 웹훅 알림(ADMIN_ALERT_WEBHOOK — Discord/Slack 호환)
+- 누적 3회(MODERATION_BAN_STRIKES) → 계정 제한: 이후 모든 인증 요청이 `403 FORBIDDEN`
 
 ### DELETE /photos/{id}  (auth) → 204  (사진 즉시 삭제)
 

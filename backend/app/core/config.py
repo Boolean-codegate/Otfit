@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     embedding_provider: str = ""
     generation_provider: str = ""
     moderation_provider: str = ""  # 유해 이미지 차단: mock | openai(=live)
+    # 유해 업로드 적발 시 관리자 알림 웹훅 (Discord/Slack 호환, 비우면 로그만)
+    admin_alert_webhook: str = ""
+    # 유해 업로드 누적 N회 → 계정 제한(밴)
+    moderation_ban_strikes: int = 3
     # 의상 교체 생성: Segmind IDM-VTON (live)
     segmind_api_key: str = ""
     segmind_api_url: str = "https://api.segmind.com/v1/idm-vton"

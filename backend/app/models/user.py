@@ -15,6 +15,14 @@ class User(Base, UUIDPkMixin, TimestampMixin):
     credit_balance: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     is_premium: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
+    # 모더레이션: 유해 이미지 업로드 적발 횟수 / 누적 시 계정 제한
+    moderation_strikes: Mapped[int] = mapped_column(
+        Integer, default=0, nullable=False, server_default="0"
+    )
+    is_banned: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, server_default="false"
+    )
+
     # 소셜 로그인: email | kakao | google
     provider: Mapped[str] = mapped_column(String(20), default="email", server_default="email", nullable=False)
     provider_id: Mapped[str | None] = mapped_column(String(255), nullable=True)

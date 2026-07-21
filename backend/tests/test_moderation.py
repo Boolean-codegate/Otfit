@@ -40,6 +40,24 @@ async def test_unsafe_image_upload_blocked(client, monkeypatch):
     assert "sexual" in body["detail"]["categories"]
 
 
+async def test_repeated_unsafe_uploads_ban_account(client, monkeypatch):
+    """유해 업로드 3회 누적 → 계정 제한(밴), 이후 모든 인증 요청 403."""
+    monkeypatch.setattr("app.services.photos.get_moderation_provider", lambda: _FlaggingProvider())
+    headers = await _signup(client, "mod-ban@test.dev")
+
+    for attempt in range(3):
+        res = await client.post(
+            "/photos", headers=headers,
+            files={"file": (f"bad{attempt}.jpg", _image(), "image/jpeg")},
+            data={"consent_image_processing": "true"},
+        )
+        assert res.status_code == 400, res.text
+    assert res.json()["error"]["detail"]["banned"] is True
+
+    res = await client.get("/me", headers=headers)
+    assert res.status_code == 403, res.text
+
+
 async def test_safe_image_upload_passes(client):
     # 기본(mock) 모더레이션은 통과 — 정상 업로드 경로 유지
     headers = await _signup(client, "mod-pass@test.dev")
