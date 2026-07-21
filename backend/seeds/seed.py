@@ -60,6 +60,15 @@ CURATED = {
     "r11.png": ("블루 버튼 브이넥 니트 톱", "미쏘", 39000, "romantic", "blue", "solid", "regular", "knit"),
     "r12.png": ("네이비 스냅 헨리넥 반팔 티", "브렌슨", 27000, "casual", "navy", "solid", "regular", "cotton"),
     "r13.png": ("네이비 체크 오버 셔츠", "유니온블루", 52000, "casual", "navy", "check", "regular", "cotton"),
+    # 바지·액세서리 (무신사, 가격은 데모 근사치)
+    "r14.png": ("세일링 와펜 볼캡", "노티카", 39000, "casual", "red", "graphic", "regular", "cotton"),
+    "r15.png": ("NY 언스트럭처드 볼캡", "엠엘비", 45000, "street", "black", "solid", "regular", "cotton"),
+    "r16.png": ("에센셜 버킷햇", "고운모자", 32000, "minimal", "black", "solid", "regular", "cotton"),
+    "r17.png": ("우븐 파라슈트 트랙 팬츠", "아디다스", 89000, "street", "olive", "solid", "long", "nylon"),
+    "r18.png": ("레이스 트림 미니 스커트", "글로니", 49000, "romantic", "white", "solid", "mini", "cotton"),
+    "r19.png": ("레터링 아플리케 와이드 스웨트팬츠", "이와이이알", 59000, "street", "navy", "graphic", "long", "cotton"),
+    "r20.png": ("체인 탭 펜던트 목걸이", "랜 아카이브", 42000, "minimal", "silver", "solid", "regular", "metal"),
+    "r21.png": ("스톤 펜던트 목걸이", "세터", 39000, "casual", "silver", "solid", "regular", "metal"),
     # 폴더 스캔 이미지 중 파일명 힌트만으로는 실물과 안 맞는 것들 (이미지 확인 후 수기 등록)
     "floral_dress.jpg": ("레드 플레어 롱 원피스", "MUSE", 89000, "romantic", "red", "solid", "long", "chiffon"),
     "top_1.png": ("버건디 라운드넥 반팔 티", "MONO", 29000, "casual", "burgundy", "solid", "regular", "cotton"),
@@ -84,6 +93,14 @@ MUSINSA_URLS = {
     "r11.png": "https://www.musinsa.com/products/6517564",  # 미쏘
     "r12.png": "https://www.musinsa.com/products/6575824",  # 브렌슨 컴포트 배색 롤업
     "r13.png": "https://www.musinsa.com/products/6652860",  # 유니온블루
+    "r14.png": "https://www.musinsa.com/products/6406231",  # 노티카 모자
+    "r15.png": "https://www.musinsa.com/products/1214164",  # 엠엘비
+    "r16.png": "https://www.musinsa.com/products/4415603",  # 고운모자
+    "r17.png": "https://www.musinsa.com/products/6371100",  # 아디다스 바지
+    "r18.png": "https://www.musinsa.com/products/6331844",  # 글로니 치마
+    "r19.png": "https://www.musinsa.com/products/5517172",  # 이와이이알
+    "r20.png": "https://www.musinsa.com/products/6576023",  # 랜 아카이브
+    "r21.png": "https://www.musinsa.com/products/6061062",  # 세터 목걸이
 }
 
 # 파일명 힌트 사전 (영문 토큰 → 한글)
