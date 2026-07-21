@@ -38,11 +38,15 @@ class PostOut(ORMModel):
     @field_validator("before_url", "after_url", mode="before")
     @classmethod
     def resolve_urls(cls, v):
+        """전체 URL은 그대로, 스토리지 키(생성 결과 등)는 현재 스토리지 백엔드로 해석."""
         if v is None:
             return v
-        from app.services.catalog import resolve_product_image_url
+        value = str(v)
+        if value.startswith("http://") or value.startswith("https://"):
+            return value
+        from app.storage.base import get_storage
 
-        return resolve_product_image_url(str(v))
+        return get_storage().url_for(value)
 
 
 class FeedResponse(BaseModel):

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OTFIT — 홈 피드</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:"Apple SD Gothic Neo",Pretendard,sans-serif; }
+  body { background:#e9e9f2; display:flex; justify-content:center; min-height:100vh; }
+  .phone { width:420px; min-height:100vh; background:#fafafd; box-shadow:0 0 40px rgba(60,50,120,.15); }
+
+  header { position:sticky; top:0; z-index:10; background:rgba(250,250,253,.92); backdrop-filter:blur(8px);
+           display:flex; align-items:center; justify-content:space-between; padding:14px 16px;
+           border-bottom:1px solid #eeeef4; }
+  header img { height:22px; }
+  .credit { background:#f3f0ff; border:1px solid #e2d9ff; color:#6d4fd1; font-weight:800;
+            border-radius:16px; padding:4px 12px; font-size:12.5px; }
+
+  section { padding:14px 16px 4px; }
+  .sec-title { font-size:13px; font-weight:800; color:#372f6b; margin-bottom:10px; }
+  .sec-title .em { color:#6d4fd1; }
+
+  /* 플랫폼 스토리바 */
+  .platforms { display:flex; gap:14px; overflow-x:auto; padding-bottom:6px; scrollbar-width:none; }
+  .platforms::-webkit-scrollbar { display:none; }
+  .plat { flex:none; width:62px; text-align:center; }
+  .plat .circle { width:56px; height:56px; margin:0 auto 5px; border-radius:50%;
+                  display:flex; align-items:center; justify-content:center;
+                  font-weight:800; font-size:15px; color:#fff;
+                  background:linear-gradient(135deg,#6d4fd1,#4ecdc4); border:2.5px solid #fff;
+                  box-shadow:0 0 0 2px #b9a8f5; }
+  .plat.soon .circle { background:#d9dbe6; box-shadow:0 0 0 2px #e5e7f0; }
+  .plat p { font-size:10.5px; color:#5a6072; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .plat.soon p { color:#a8adc0; }
+
+  /* HOT 캐러셀 */
+  .hot { display:flex; gap:10px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none; }
+  .hot::-webkit-scrollbar { display:none; }
+  .hot-card { flex:none; width:150px; border-radius:14px; overflow:hidden; position:relative;
+              background:#fff; border:1px solid #eeeef4; }
+  .hot-card img { width:100%; height:170px; object-fit:cover; display:block; background:#f0f0f5; }
+  .hot-card .rank { position:absolute; top:8px; left:8px; background:#ff5f6d; color:#fff;
+                    font-size:11px; font-weight:800; border-radius:8px; padding:2px 8px; }
+  .hot-card .cap { font-size:11px; color:#40465a; padding:8px 9px; line-height:1.4;
+                   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+
+  /* 피드 카드 */
+  .card { background:#fff; border:1px solid #eeeef4; border-radius:18px; margin:0 16px 16px; overflow:hidden; }
+  .card .top { display:flex; align-items:center; gap:9px; padding:12px 14px; }
+  .avatar { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,#6d4fd1,#4ecdc4);
+            color:#fff; font-weight:800; font-size:14px; display:flex; align-items:center; justify-content:center; }
+  .who { font-size:13px; font-weight:700; color:#20263a; }
+  .ask { font-size:11px; color:#8a90a3; }
+  .card .photo { width:100%; aspect-ratio:4/5; object-fit:cover; display:block; background:#f0f0f5; }
+  .card .caption { padding:12px 14px 4px; font-size:13.5px; color:#20263a; line-height:1.5; }
+
+  .votebar { display:flex; gap:8px; padding:12px 14px; }
+  .vbtn { flex:1; padding:11px; border-radius:12px; border:1.5px solid #e4e6ef; background:#fff;
+          font-size:14px; font-weight:800; cursor:pointer; color:#40465a; }
+  .vbtn.buy.on { background:#f3f0ff; border-color:#6d4fd1; color:#6d4fd1; }
+  .vbtn.skip.on { background:#f2f4f7; border-color:#9aa2b5; color:#5a6072; }
+  .result { padding:0 14px 12px; display:none; }
+  .result.show { display:block; }
+  .bar { height:10px; border-radius:6px; background:#e9ebf2; overflow:hidden; display:flex; }
+  .bar .fill { background:linear-gradient(90deg,#6d4fd1,#4ecdc4); }
+  .pct { display:flex; justify-content:space-between; font-size:11.5px; color:#8a90a3; margin-top:5px; }
+  .pct b { color:#6d4fd1; }
+
+  .prod { display:flex; align-items:center; gap:10px; margin:4px 14px 14px; padding:9px;
+          background:#fafafd; border:1px solid #eeeef4; border-radius:12px; }
+  .prod img { width:44px; height:44px; border-radius:8px; object-fit:cover; background:#fff; }
+  .prod .pm { flex:1; min-width:0; }
+  .prod .pt { font-size:12.5px; font-weight:700; color:#20263a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .prod .pp { font-size:12px; color:#4ecdc4; font-weight:800; margin-top:2px; }
+  .prod button { border:0; background:linear-gradient(135deg,#6d4fd1,#4ecdc4); color:#fff;
+                 font-size:12px; font-weight:800; border-radius:9px; padding:9px 13px; cursor:pointer; }
+
+  .toast { position:fixed; bottom:26px; left:50%; transform:translateX(-50%);
+           background:#20263a; color:#fff; font-size:13px; padding:11px 18px; border-radius:22px;
+           opacity:0; transition:opacity .3s; pointer-events:none; z-index:50; }
+  .toast.show { opacity:1; }
+  .loading { text-align:center; color:#8a90a3; font-size:13px; padding:40px 0; }
+
+  /* 하단 내비게이션 */
+  .phone { padding-bottom:74px; position:relative; }
+  nav.bottom { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:420px; z-index:20;
+               background:rgba(255,255,255,.96); backdrop-filter:blur(10px);
+               border-top:1px solid #eeeef4; display:flex; align-items:center; justify-content:space-around;
+               padding:8px 6px calc(10px + env(safe-area-inset-bottom)); }
+  nav.bottom button { border:0; background:none; cursor:pointer; font-size:10.5px; color:#a8adc0;
+                      display:flex; flex-direction:column; align-items:center; gap:3px; width:56px; }
+  nav.bottom button .ic { font-size:20px; }
+  nav.bottom button.on { color:#6d4fd1; font-weight:800; }
+  nav.bottom .plus { width:48px; height:48px; border-radius:50%; margin-top:-24px;
+                     background:linear-gradient(135deg,#6d4fd1,#4ecdc4); color:#fff; font-size:24px;
+                     display:flex; align-items:center; justify-content:center;
+                     box-shadow:0 8px 18px rgba(109,79,209,.4); }
+
+  /* 새 게시물 모달 */
+  .modal { position:fixed; inset:0; background:rgba(20,22,34,.55); z-index:40;
+           display:none; align-items:flex-end; justify-content:center; }
+  .modal.show { display:flex; }
+  .sheet { width:420px; max-height:86vh; overflow-y:auto; background:#fff;
+           border-radius:20px 20px 0 0; padding:18px 18px 26px; }
+  .sheet h3 { font-size:15px; color:#20263a; margin-bottom:4px; }
+  .sheet .step { font-size:11.5px; color:#8a90a3; margin-bottom:14px; }
+  .upload-box { border:1.5px dashed #d5d8e5; border-radius:14px; padding:34px 10px; text-align:center;
+                color:#8a90a3; font-size:13px; cursor:pointer; }
+  .upload-box:hover { border-color:#6d4fd1; }
+  .pick-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .pick { border:2px solid transparent; border-radius:12px; overflow:hidden; cursor:pointer; background:#fafafd; }
+  .pick img { width:100%; aspect-ratio:1; object-fit:cover; display:block; }
+  .pick p { font-size:10.5px; color:#40465a; padding:5px 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pick.sel { border-color:#6d4fd1; }
+  .sheet .go { width:100%; margin-top:14px; padding:13px; border:0; border-radius:12px;
+               background:linear-gradient(135deg,#6d4fd1,#4ecdc4); color:#fff; font-weight:800;
+               font-size:14.5px; cursor:pointer; }
+  .sheet .go:disabled { opacity:.45; cursor:default; }
+  .gen-status { text-align:center; padding:26px 0; color:#40465a; font-size:13.5px; }
+  .genbar { height:8px; border-radius:5px; background:#e9ebf2; overflow:hidden; margin:14px 30px 6px; }
+  .genbar .f { height:100%; background:linear-gradient(90deg,#6d4fd1,#4ecdc4); transition:width .4s; }
+  .preview { width:60%; margin:0 auto 12px; display:block; border-radius:14px; border:1px solid #eeeef4; }
+  .sheet textarea { width:100%; border:1.5px solid #e4e6ef; border-radius:12px; padding:11px; font-size:13.5px;
+                    font-family:inherit; resize:none; height:70px; }
+  .sheet textarea:focus { outline:none; border-color:#6d4fd1; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <header>
+    <img src="assets/wordmark.png" alt="OTFIT" />
+    <span class="credit" id="credit">✨ …</span>
+  </header>
+
+  <section>
+    <div class="platforms" id="platforms"></div>
+  </section>
+
+  <section>
+    <div class="sec-title">🔥 지금 <span class="em">HOT</span></div>
+    <div class="hot" id="hot"></div>
+  </section>
+
+  <section style="padding-bottom:8px">
+    <div class="sec-title">이거 어때요? <span class="em">— 투표로 정해주세요</span></div>
+  </section>
+  <div id="feed"><div class="loading">피드 불러오는 중…</div></div>
+
+  <nav class="bottom">
+    <button class="on"><span class="ic">🏠</span>홈</button>
+    <button onclick="toast('카탈로그 — Flutter shop 화면과 연결')"><span class="ic">👗</span>옷장</button>
+    <button onclick="openComposer()"><span class="plus">＋</span></button>
+    <button onclick="toast('알림 — 내 게시물 투표 현황이 여기로')"><span class="ic">🔔</span>알림</button>
+    <button onclick="myInfo()"><span class="ic">👤</span>마이</button>
+  </nav>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- 새 게시물: 사진 → AI 피팅 → 게시 (정훈 파이프라인 그대로 사용) -->
+<div class="modal" id="composer">
+  <div class="sheet">
+    <h3>새 게시물</h3>
+    <div class="step" id="cstep">1/3 · 내 사진 선택 → AI가 옷을 입혀줍니다</div>
+    <div id="c1">
+      <div class="upload-box" onclick="document.getElementById('cfile').click()">
+        📷 상반신 사진 업로드<br/><small>얼굴·배경은 유지되고 옷만 바뀝니다 · 업로드 시 이미지 처리에 동의</small>
+      </div>
+      <input type="file" id="cfile" accept="image/*" hidden />
+    </div>
+    <div id="c2" style="display:none">
+      <div class="pick-grid" id="prodGrid"></div>
+      <button class="go" id="btnGen" disabled onclick="runGeneration()">AI 피팅 시작 (1크레딧)</button>
+    </div>
+    <div id="c3" style="display:none">
+      <div class="gen-status" id="genMsg">AI가 옷을 입히는 중…</div>
+      <div class="genbar"><div class="f" id="genFill" style="width:5%"></div></div>
+    </div>
+    <div id="c4" style="display:none">
+      <img class="preview" id="cPreview" alt="생성 결과" />
+      <textarea id="cCaption" placeholder="이거 어때요? 한마디 남겨보세요"></textarea>
+      <button class="go" onclick="publishPost()">피드에 올리기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = "http://localhost:8000";
+let access = null;
+const $ = (id) => document.getElementById(id);
+
+function toast(t) {
+  const el = $("toast");
+  el.textContent = t;
+  el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), 2200);
+}
+
+async function api(path, opts={}) {
+  const res = await fetch(API+path, {
+    headers: { "Content-Type":"application/json", Authorization:"Bearer "+access }, ...opts,
+  });
+  const body = await res.json().catch(()=>({}));
+  if (!res.ok) throw new Error(body?.error?.message || ("HTTP "+res.status));
+  return body;
+}
+
+// 로그인 연동: 로그인 페이지(index.html)에서 발급된 토큰을 공유. 없으면 로그인으로.
+async function login() {
+  access = localStorage.getItem("otfit_access");
+  if (!access) { location.href = "index.html"; throw new Error("로그인 필요"); }
+  try {
+    const me = await api("/me");
+    $("credit").textContent = "✨ " + me.credit_balance;
+  } catch (e) {
+    localStorage.removeItem("otfit_access");
+    location.href = "index.html";
+    throw e;
+  }
+}
+
+async function refreshCredit() {
+  const me = await api("/me");
+  $("credit").textContent = "✨ " + me.credit_balance;
+}
+
+async function myInfo() {
+  const me = await api("/me");
+  if (confirm(`${me.nickname} (${me.email})\n크레딧 ${me.credit_balance}\n\n로그아웃할까요?`)) {
+    localStorage.removeItem("otfit_access");
+    location.href = "index.html";
+  }
+}
+
+function pct(p) {
+  const total = p.buy_votes + p.skip_votes;
+  return total ? Math.round(p.buy_votes / total * 100) : 0;
+}
+
+// ── 플랫폼 스토리바 ──
+// 협약된 파트너몰만 활성(카탈로그 연동). 나머지는 입점 협의 대상 — 탭하면 해당 몰로 이동만.
+const MALL_LINKS = {
+  "무신사": "https://www.musinsa.com", "지그재그": "https://zigzag.kr",
+  "29CM": "https://www.29cm.co.kr", "에이블리": "https://a-bly.com", "W컨셉": "https://www.wconcept.co.kr",
+};
+async function renderPlatforms() {
+  const partners = await api("/platforms");
+  $("platforms").innerHTML =
+    partners.map(p => `<div class="plat" onclick="toast('파트너몰 카탈로그 상품이 피드·피팅에 연동됩니다')"><div class="circle">${p.name[0]}</div><p>${p.name}</p></div>`).join("") +
+    Object.keys(MALL_LINKS).map(n =>
+      `<div class="plat soon" onclick="window.open('${MALL_LINKS[n]}','_blank')"><div class="circle">${n[0]}</div><p>${n} · 협의중</p></div>`
+    ).join("");
+}
+
+// ── HOT 캐러셀 ──
+function renderHot(items) {
+  $("hot").innerHTML = items.slice(0,4).map((p,i) => `
+    <div class="hot-card">
+      <span class="rank">HOT ${i+1}</span>
+      <img src="${p.after_url}" alt="" />
+      <div class="cap">${p.caption}</div>
+    </div>`).join("");
+}
+
+// ── 피드 ──
+function voteResultHtml(p) {
+  const buyPct = pct(p);
+  return `
+    <div class="bar"><div class="fill" style="width:${buyPct}%"></div></div>
+    <div class="pct"><b>살까 ${buyPct}% (${p.buy_votes})</b><span>말까 ${100-buyPct}% (${p.skip_votes})</span></div>`;
+}
+
+function renderFeed(items) {
+  $("feed").innerHTML = items.map(p => `
+    <div class="card" data-id="${p.id}">
+      <div class="top">
+        <div class="avatar">${p.author.nickname[0]}</div>
+        <div><div class="who">${p.author.nickname}</div><div class="ask">의견을 기다리는 중 · ${p.buy_votes+p.skip_votes}명 참여</div></div>
+      </div>
+      <img class="photo" src="${p.after_url}" alt="" />
+      <div class="caption">${p.caption}</div>
+      <div class="votebar">
+        <button class="vbtn buy ${p.my_vote==='buy'?'on':''}" onclick="vote('${p.id}','buy')">🔥 살까</button>
+        <button class="vbtn skip ${p.my_vote==='skip'?'on':''}" onclick="vote('${p.id}','skip')">🤔 말까</button>
+      </div>
+      <div class="result ${p.my_vote?'show':''}" id="res-${p.id}">${voteResultHtml(p)}</div>
+      ${p.product ? `
+      <div class="prod">
+        <img src="${p.product.image_url}" alt="" />
+        <div class="pm"><div class="pt">${p.product.title}</div><div class="pp">₩${p.product.price.toLocaleString()} · ${p.product.brand}</div></div>
+        <button onclick="toast('구매 링크로 이동 (제휴 수수료 발생 지점)')">구매</button>
+      </div>` : ""}
+    </div>`).join("");
+}
+
+async function vote(postId, choice) {
+  try {
+    const body = await api(`/posts/${postId}/vote`, {method:"POST", body:JSON.stringify({choice})});
+    const p = body.post;
+    const card = document.querySelector(`.card[data-id="${postId}"]`);
+    card.querySelector(".vbtn.buy").classList.toggle("on", p.my_vote==="buy");
+    card.querySelector(".vbtn.skip").classList.toggle("on", p.my_vote==="skip");
+    const res = $("res-"+postId);
+    res.innerHTML = voteResultHtml(p);
+    res.classList.add("show");
+    card.querySelector(".ask").textContent = `의견을 기다리는 중 · ${p.buy_votes+p.skip_votes}명 참여`;
+    if (body.reward_credits > 0) {
+      toast(`투표 보상 +${body.reward_credits} 크레딧 ✨`);
+      const me = await api("/me");
+      $("credit").textContent = "✨ " + me.credit_balance;
+    }
+  } catch(e) { toast(e.message); }
+}
+
+// ══════════════════════════════════════════════════════════
+// 새 게시물: 사진 업로드 → AI 피팅(정훈 생성 파이프라인) → 게시
+// POST /photos → /photos/{id}/analyze → POST /generations → 폴링 → POST /posts
+// ══════════════════════════════════════════════════════════
+const comp = { photoId: null, productId: null, resultId: null };
+
+function cStep(n, label) {
+  ["c1","c2","c3","c4"].forEach((id,i) => $(id).style.display = (i===n-1) ? "block" : "none");
+  $("cstep").textContent = label;
+}
+function openComposer() {
+  comp.photoId = comp.productId = comp.resultId = null;
+  $("composer").classList.add("show");
+  cStep(1, "1/3 · 내 사진 선택 → AI가 옷을 입혀줍니다");
+}
+$("composer").onclick = (e) => { if (e.target === $("composer")) $("composer").classList.remove("show"); };
+
+$("cfile").onchange = async (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  try {
+    cStep(3, "사진 업로드 중…");
+    $("genMsg").textContent = "사진 업로드·검증 중…";
+    $("genFill").style.width = "10%";
+    const fd = new FormData();
+    fd.append("file", f);
+    fd.append("consent_image_processing", "true");
+    const res = await fetch(API+"/photos", { method:"POST", headers:{Authorization:"Bearer "+access}, body: fd });
+    const photo = await res.json();
+    if (!res.ok) throw new Error(photo?.error?.message || "업로드 실패");
+    comp.photoId = photo.id;
+    const ana = await api(`/photos/${photo.id}/analyze`, {method:"POST", body:"{}"});
+    if (!ana.is_valid) throw new Error("사진 검증 실패: " + (ana.reject_reason || ""));
+    // 상품 선택 단계
+    const prods = await api("/products?limit=30");
+    const usable = prods.items.filter(p => p.image_url.startsWith("http"));
+    $("prodGrid").innerHTML = usable.slice(0,9).map(p => `
+      <div class="pick" data-id="${p.id}" onclick="pickProduct(this)">
+        <img src="${p.image_url}" alt="" /><p>${p.title}</p>
+      </div>`).join("");
+    cStep(2, "2/3 · 입혀볼 옷 선택");
+  } catch(err) { toast(err.message); cStep(1, "1/3 · 내 사진 선택"); }
+};
+
+function pickProduct(el) {
+  document.querySelectorAll(".pick").forEach(x => x.classList.remove("sel"));
+  el.classList.add("sel");
+  comp.productId = el.dataset.id;
+  $("btnGen").disabled = false;
+}
+
+async function runGeneration() {
+  try {
+    cStep(3, "3/3 · AI 피팅 중");
+    $("genMsg").textContent = "AI가 옷을 입히는 중…";
+    const gen = await api("/generations", {method:"POST", body:JSON.stringify({
+      photo_id: comp.photoId, mode: "A_direct", product_id: comp.productId })});
+    let st;
+    for (let i = 0; i < 60; i++) {
+      await new Promise(r => setTimeout(r, 1500));
+      st = await api(`/generations/${gen.job_id}`);
+      $("genFill").style.width = Math.max(10, Math.round((st.progress||0)*100)) + "%";
+      $("genMsg").textContent = st.step_label || st.status;
+      if (st.status === "done" || st.status === "failed") break;
+    }
+    if (st.status !== "done") throw new Error(st.error?.message || "생성 실패 (크레딧 자동 환불)");
+    const rs = await api(`/generations/${gen.job_id}/results`);
+    const r = rs.results[0];
+    comp.resultId = r.id;
+    $("cPreview").src = r.result_url;
+    refreshCredit();
+    cStep(4, "완료! 피드에 올려서 투표를 받아보세요");
+  } catch(err) { toast(err.message); cStep(2, "2/3 · 입혀볼 옷 선택"); }
+}
+
+async function publishPost() {
+  try {
+    await api("/posts", {method:"POST", body:JSON.stringify({
+      result_id: comp.resultId, caption: $("cCaption").value.trim() || "이거 어때요?" })});
+    $("composer").classList.remove("show");
+    toast("게시 완료! 투표를 기다려보세요 🎉");
+    await loadFeed("new");
+  } catch(err) { toast(err.message); }
+}
+
+async function loadFeed(sort="hot") {
+  const feed = await api(`/feed?sort=${sort}&limit=20`);
+  if (sort === "hot") renderHot(feed.items);
+  renderFeed(feed.items);
+}
+
+(async () => {
+  try {
+    await login();
+    await renderPlatforms();
+    const feed = await api("/feed?sort=hot&limit=20");
+    renderHot(feed.items);
+    renderFeed(feed.items);
+  } catch(e) {
+    $("feed").innerHTML = `<div class="loading">불러오기 실패: ${e.message}<br/>백엔드(localhost:8000)가 떠 있는지 확인하세요.</div>`;
+  }
+})();
+</script>
+</body>
+</html>
