@@ -32,11 +32,13 @@ _CATEGORY_KO = {
 }
 
 
-def _attrs_desc(garment: GarmentSpec) -> str:
-    attrs = garment.attributes
-    return ", ".join(
-        str(attrs[key]) for key in ("color", "pattern", "material") if attrs.get(key)
-    )
+# 상품 사진이 항상 진실 — 메타데이터(색상 등)가 사진과 다른 상품이 있어
+# 텍스트 속성은 지시문에 넣지 않는다 (실측: '화이트' 메타의 베이지+청 그래픽 티가
+# 흰 티로 렌더링되는 문제)
+_PHOTO_TRUTH = (
+    "각 아이템의 색상·무늬·그래픽·프린트·로고는 반드시 해당 상품 사진에 보이는 "
+    "그대로 정확히 재현해. 상품명이 사진과 달라 보여도 사진이 우선이야."
+)
 
 
 def _instruction(garments: list[GarmentSpec], style: str | None, variation_seed: int) -> str:
@@ -65,33 +67,29 @@ def _instruction(garments: list[GarmentSpec], style: str | None, variation_seed:
     if len(garments) == 1 and garments[0].category != "accessory":
         garment = garments[0]
         category = _CATEGORY_KO.get(garment.category, "옷")
-        desc = _attrs_desc(garment)
         text = (
             f"첫 번째 사진의 인물, 얼굴, 헤어, 체형, 포즈, 배경을 그대로 유지하면서 "
             f"두 번째 사진의 옷({category})만 자연스럽게 입혀줘. 사실적인 패션 사진처럼. "
-            + face_lock
+            + _PHOTO_TRUTH + " " + face_lock
         )
-        if desc:
-            text += f" (상품: {garment.title}, {desc})"
     else:
         lines = [
             "첫 번째 사진의 인물, 얼굴, 헤어, 체형, 포즈, 배경을 그대로 유지해.",
             face_lock,
             layering,
+            _PHOTO_TRUTH,
             "이후 사진들은 상품 사진이야. 상품 사진 속 모델의 얼굴·몸·배경과 "
             "그 모델이 입은 다른 옷은 절대 결과에 반영하지 말고, 아래 지정한 아이템만 참고해:",
         ]
         for index, garment in enumerate(garments, start=2):
             category = _CATEGORY_KO.get(garment.category, "옷")
-            desc = _attrs_desc(garment)
-            detail = f"{garment.title}" + (f", {desc}" if desc else "")
             if garment.category == "accessory":
                 lines.append(
-                    f"- {index}번째 사진: 액세서리({detail})만 인물에게 자연스럽게 착용시켜."
+                    f"- {index}번째 사진: 액세서리({garment.title})만 인물에게 자연스럽게 착용시켜."
                 )
             else:
                 lines.append(
-                    f"- {index}번째 사진: {category}({detail})를 인물에게 자연스럽게 입혀줘."
+                    f"- {index}번째 사진: {category}({garment.title})를 인물에게 자연스럽게 입혀줘."
                 )
         lines.append("위에 지정한 아이템 외에는 인물의 옷차림을 포함해 아무것도 바꾸지 마.")
         lines.append("사실적인 패션 사진처럼 완성해.")

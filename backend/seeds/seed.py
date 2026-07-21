@@ -77,6 +77,7 @@ CURATED = {
     "r25.png": ("에센셜 화이트 러닝화", "르꼬끄", 79000, "casual", "white", "solid", "regular", "mesh"),
     "r26.png": ("스냅 하이넥 플리스 풀오버", "더콜디스트모먼트", 69000, "casual", "olive", "solid", "regular", "fleece"),
     # 폴더 스캔 이미지 중 파일명 힌트만으로는 실물과 안 맞는 것들 (이미지 확인 후 수기 등록)
+    "white_cotton_tee.jpg": ("아이보리 그래픽 프린트 반팔 티", "STREETONE", 30000, "street", "beige", "graphic", "regular", "cotton"),
     "floral_dress.jpg": ("레드 플레어 롱 원피스", "MUSE", 89000, "romantic", "red", "solid", "long", "chiffon"),
     "top_1.png": ("버건디 라운드넥 반팔 티", "MONO", 29000, "casual", "burgundy", "solid", "regular", "cotton"),
     "top_2.png": ("차콜 립 반팔 티", "MONO", 27000, "minimal", "charcoal", "solid", "regular", "cotton"),
