@@ -119,12 +119,15 @@ async def test_full_flow(client):
     export = res.json()
     assert export["watermark"] is True
 
-    # ── 크레딧: 가입 보너스 10 - 생성 1 = 9 ─────────────────────
+    # ── 크레딧: 가입 보너스 - 생성 1 ────────────────────────────
+    from app.core.config import get_settings
+
+    bonus = get_settings().signup_bonus_credits
     res = await client.get("/credits", headers=headers)
     assert res.status_code == 200
-    assert res.json()["balance"] == 9
+    assert res.json()["balance"] == bonus - 1
 
-    # ── 크레딧 부족 케이스: 잔액 0으로 만들지 않고 코드만 확인 ──
+    # ── 크레딧 충전 (결제 목) ────────────────────────────────────
     res = await client.post("/credits/purchase", headers=headers, json={"amount": 5})
     assert res.status_code == 200
-    assert res.json()["balance"] == 14
+    assert res.json()["balance"] == bonus - 1 + 5

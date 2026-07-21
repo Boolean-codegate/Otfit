@@ -1,3 +1,4 @@
+from app.core.config import get_settings
 """소셜 로그인 통합 테스트 (계약 §1 POST /auth/social).
 
 외부 API(카카오/구글) 호출부만 monkeypatch로 대체하고,
@@ -35,7 +36,7 @@ async def test_social_signup_and_relogin(client, monkeypatch):
     body = res.json()
     assert body["user"]["email"] == "social@test.dev"
     assert body["user"]["nickname"] == "카카오철민"
-    assert body["user"]["credit_balance"] == 10
+    assert body["user"]["credit_balance"] == get_settings().signup_bonus_credits
     assert body["access_token"] and body["refresh_token"]
     user_id = body["user"]["id"]
 
@@ -48,7 +49,7 @@ async def test_social_signup_and_relogin(client, monkeypatch):
     assert res.status_code == 200, res.text
     body2 = res.json()
     assert body2["user"]["id"] == user_id
-    assert body2["user"]["credit_balance"] == 10
+    assert body2["user"]["credit_balance"] == get_settings().signup_bonus_credits
 
 
 async def test_social_login_no_email_uses_placeholder(client, monkeypatch):
