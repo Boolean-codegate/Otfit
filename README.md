@@ -55,6 +55,7 @@ Supabase Postgres + pgvector · Upstash Redis · Cloudflare R2
 | [backend/](backend/) | FastAPI·Celery·pgvector 기반 백엔드와 시드, 마이그레이션, 테스트 |
 | [frontend/](frontend/) | 모바일·PC에 대응하는 Flutter 웹 앱 |
 | [demo/](demo/) | 주요 기능을 담은 데모 영상 |
+| [코드게이트_AI_해커톤_Boolean.pptx](코드게이트_AI_해커톤_Boolean.pptx) | 발표 자료 PPT
 
 ## 🚀 로컬 실행
 
