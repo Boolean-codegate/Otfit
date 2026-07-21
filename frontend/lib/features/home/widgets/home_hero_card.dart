@@ -309,7 +309,7 @@ class _BeforeAfterShowcaseState extends ConsumerState<_BeforeAfterShowcase> {
                       ),
                     ),
                     child: Text(
-                      '@$nickname 님의 실제 변신',
+                      '@$nickname 님의 실제 피팅',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,
