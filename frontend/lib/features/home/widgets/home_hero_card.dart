@@ -191,7 +191,7 @@ class _BeforeAfterShowcaseState extends ConsumerState<_BeforeAfterShowcase> {
   @override
   void initState() {
     super.initState();
-    // 비포(2.2초) → 애프터(2.2초) → 다음 변신
+    // 비포(2.2초) → 애프터(2.2초) → 다음 피팅
     _timer = Timer.periodic(const Duration(milliseconds: 2200), (_) {
       if (!mounted) return;
       setState(() {
@@ -203,6 +203,15 @@ class _BeforeAfterShowcaseState extends ConsumerState<_BeforeAfterShowcase> {
         }
       });
     });
+  }
+
+  /// 다음에 보여줄 이미지를 미리 디코딩해 전환 시 빈 프레임을 없앤다.
+  void _precache(String url) {
+    if (url.startsWith('assets/')) {
+      precacheImage(AssetImage(url), context);
+    } else {
+      precacheImage(NetworkImage(url), context);
+    }
   }
 
   @override
@@ -237,12 +246,43 @@ class _BeforeAfterShowcaseState extends ConsumerState<_BeforeAfterShowcase> {
     }
 
     final post = showcases[_postIndex % showcases.length];
+    final next = showcases[(_postIndex + 1) % showcases.length];
+    // 다음 컷을 미리 로딩 (전환 시 빈 화면 방지)
+    _precache(post.afterUrl);
+    _precache(next.beforeUrl!);
+    _precache(next.afterUrl);
     nickname = post.author.nickname;
-    final url = _showAfter ? post.afterUrl : post.beforeUrl!;
+    // 비포/애프터를 겹쳐 두고 크로스페이드 → 로딩 공백 없이 스르륵 전환.
+    // 게시물이 바뀔 땐 슬라이드+페이드로 장면 전환.
     content = AnimatedSwitcher(
-      duration: const Duration(milliseconds: 450),
-      switchInCurve: Curves.easeOut,
-      child: _image(url, ValueKey('$_postIndex-$_showAfter')),
+      duration: const Duration(milliseconds: 600),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0.18, 0),
+            end: Offset.zero,
+          ).animate(animation),
+          child: child,
+        ),
+      ),
+      child: KeyedSubtree(
+        key: ValueKey(_postIndex),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            _image(post.beforeUrl!, const ValueKey('before')),
+            AnimatedOpacity(
+              opacity: _showAfter ? 1 : 0,
+              duration: const Duration(milliseconds: 750),
+              curve: Curves.easeInOut,
+              child: _image(post.afterUrl, const ValueKey('after')),
+            ),
+          ],
+        ),
+      ),
     );
 
     return Center(
