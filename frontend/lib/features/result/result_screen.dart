@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/save_image.dart';
 import '../../core/widgets/gradient_primary_button.dart';
 import '../../core/widgets/price_text.dart';
 import '../../core/widgets/product_image.dart';
@@ -43,21 +44,13 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
     }
     try {
       _showMessage('이미지를 준비하고 있어요…');
-      final export = await ref
+      final bytes = await ref
           .read(tryOnRepositoryProvider)
-          .exportResult(resultId: resultId, ratio: '4:5');
+          .exportResultBytes(resultId: resultId, ratio: '4:5');
       if (!mounted) return;
-      if (export.url.startsWith('http')) {
-        await launchUrl(
-          Uri.parse(export.url),
-          mode: LaunchMode.externalApplication,
-        );
-        _showMessage(export.watermarked
-            ? '새 탭에서 이미지를 저장하세요. (무료 플랜은 워터마크 포함)'
-            : '새 탭에서 이미지를 저장하세요.');
-      } else {
-        _showMessage('다운로드 URL을 만들지 못했어요.');
-      }
+      await saveImageBytes(
+        context, bytes, 'OTFIT_${resultId.substring(0, 8)}.jpg',
+      );
     } on Object catch (error) {
       if (mounted) _showMessage('다운로드 실패: $error');
     }

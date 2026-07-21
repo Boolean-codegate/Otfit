@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../core/network/api_client.dart';
 import '../../models/fitting_result.dart';
@@ -141,6 +142,21 @@ class HttpTryOnRepository extends TryOnRepository {
         url: (data['export_url'] ?? '').toString(),
         watermarked: data['watermark'] == true,
       );
+    });
+  }
+
+  @override
+  Future<Uint8List> exportResultBytes({
+    required String resultId,
+    String? ratio,
+  }) {
+    return guardApi(() async {
+      final response = await _client.dio.get<List<int>>(
+        '/results/$resultId/export/file',
+        queryParameters: <String, dynamic>{'ratio': ?ratio},
+        options: Options(responseType: ResponseType.bytes),
+      );
+      return Uint8List.fromList(response.data ?? const <int>[]);
     });
   }
 }

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/save_image.dart';
 import '../../core/widgets/before_after_image.dart';
 import '../../core/widgets/price_text.dart';
 import '../../core/widgets/product_image.dart';
@@ -33,20 +32,13 @@ class _FittingDetailScreenState extends ConsumerState<FittingDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('이미지를 준비하고 있어요…')),
       );
-      final export = await ref
+      final bytes = await ref
           .read(tryOnRepositoryProvider)
-          .exportResult(resultId: fitting.resultId, ratio: '4:5');
+          .exportResultBytes(resultId: fitting.resultId, ratio: '4:5');
       if (!context.mounted) return;
-      if (export.url.startsWith('http')) {
-        await launchUrl(
-          Uri.parse(export.url),
-          mode: LaunchMode.externalApplication,
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('데모 결과는 다운로드를 지원하지 않아요.')),
-        );
-      }
+      await saveImageBytes(
+        context, bytes, 'OTFIT_${fitting.resultId.substring(0, 8)}.jpg',
+      );
     } on Object catch (error) {
       if (context.mounted) {
         ScaffoldMessenger.of(context)

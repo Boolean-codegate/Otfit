@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
+
 import '../mock/mock_products.dart';
 import '../models/fitting_result.dart';
 import '../models/product.dart';
@@ -67,6 +70,9 @@ abstract class TryOnRepository {
     bool hiRes = false,
     bool removeWatermark = false,
   });
+
+  /// GET /results/{id}/export/file — 이미지 바이트 (갤러리 저장/파일 저장용).
+  Future<Uint8List> exportResultBytes({required String resultId, String? ratio});
 }
 
 class MockTryOnRepository extends TryOnRepository {
@@ -341,6 +347,16 @@ class MockTryOnRepository extends TryOnRepository {
   }) async {
     await _wait();
     return (url: 'assets/images/mock/try_on_result_01.png', watermarked: true);
+  }
+
+  @override
+  Future<Uint8List> exportResultBytes({
+    required String resultId,
+    String? ratio,
+  }) async {
+    await _wait();
+    final data = await rootBundle.load('assets/images/mock/try_on_result_01.png');
+    return data.buffer.asUint8List();
   }
 
   ApiException _notFound(String field, String id) => ApiException(

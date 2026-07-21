@@ -49,15 +49,15 @@ class ExportService:
         self.storage = get_storage()
         self.settings = get_settings()
 
-    async def export(
+    async def render(
         self,
         user_id: uuid.UUID,
         result_id: uuid.UUID,
         ratio: str | None,
         hi_res: bool,
         remove_watermark: bool,
-    ) -> dict:
-        """계약 §7: 유료/프리미엄이 아니면 hi_res 무시 + 워터마크 포함으로 반환."""
+    ) -> tuple[bytes, str, bool]:
+        """(이미지 바이트, 파일명, 워터마크 여부) — 계약 §7 정책 적용."""
         result = await GenerationService(self.session).get_owned_result(user_id, result_id)
         user = await UserRepository(self.session).get(user_id)
 
@@ -79,10 +79,24 @@ class ExportService:
 
         buf = io.BytesIO()
         image.save(buf, format="JPEG", quality=95 if allow_hi_res else 88)
+        return buf.getvalue(), f"OTFIT_{str(result_id)[:8]}.jpg", watermark
+
+    async def export(
+        self,
+        user_id: uuid.UUID,
+        result_id: uuid.UUID,
+        ratio: str | None,
+        hi_res: bool,
+        remove_watermark: bool,
+    ) -> dict:
+        """계약 §7: 유료/프리미엄이 아니면 hi_res 무시 + 워터마크 포함으로 반환."""
+        data, filename, watermark = await self.render(
+            user_id, result_id, ratio, hi_res, remove_watermark
+        )
+        allow_hi_res = hi_res  # 파일명 구분용 (render에서 정책 반영됨)
         safe_ratio = (ratio or "orig").replace(":", "x")
         key = f"exports/{user_id}/{result_id}_{safe_ratio}_{'hi' if allow_hi_res else 'std'}.jpg"
-        self.storage.save(key, buf.getvalue())
+        self.storage.save(key, data)
 
-        # attachment URL — 브라우저가 바로 저장 (모바일=갤러리/다운로드, PC=다운로드 폴더)
-        filename = f"OTFIT_{str(result_id)[:8]}.jpg"
+        # attachment URL — 브라우저가 바로 저장 (모바일=다운로드, PC=다운로드 폴더)
         return {"export_url": self.storage.download_url(key, filename), "watermark": watermark}
