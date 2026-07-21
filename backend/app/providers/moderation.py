@@ -56,12 +56,15 @@ class OpenAIModerationProvider:
         return await self._danger_scan(data_url)
 
     async def _danger_scan(self, data_url: str) -> ModerationVerdict:
-        """무기·흉기 등 위험 물품 감지. 실패 시 통과(fail-open) — 업로드를 막지 않는다."""
+        """무기·위험 물품 + 공포·혐오 이미지 감지. 실패 시 통과(fail-open)."""
         prompt = (
-            "이 사진에 무기나 위험한 물건(칼, 총, 흉기, 폭발물 등)이 보이는지 판단해. "
-            "요리 재료 사진 속 식칼처럼 명백히 무해한 맥락이 아니라, 사람이 들고 있거나 "
-            "부각되어 위협적으로 보일 수 있으면 위험으로 판단해. "
-            'JSON만 출력: {"dangerous": true 또는 false, "items": ["knife", ...]}'
+            "패션 피팅 서비스에 올라온 인물 사진이야. 다음 두 가지를 판단해:\n"
+            "1) dangerous: 무기나 위험한 물건(칼, 총, 흉기, 폭발물 등)이 보이는가? "
+            "요리 재료 속 식칼처럼 명백히 무해한 맥락이 아니라, 사람이 들고 있거나 "
+            "부각되어 위협적으로 보이면 true.\n"
+            "2) disturbing: 보는 사람에게 공포감·혐오감을 줄 수 있는가? "
+            "(호러·좀비 분장, 유혈·상처 표현, 그로테스크한 연출, 기괴하게 변형된 얼굴 등)\n"
+            'JSON만 출력: {"dangerous": true|false, "items": ["knife", ...], "disturbing": true|false}'
         )
         try:
             res = await self.client.with_options(timeout=20.0).responses.create(
@@ -78,11 +81,15 @@ class OpenAIModerationProvider:
             if text.startswith("```"):
                 text = text.strip("`").removeprefix("json").strip()
             verdict = json.loads(text)
+            categories: list[str] = []
             if verdict.get("dangerous"):
-                items = [str(i) for i in (verdict.get("items") or [])] or ["weapon"]
-                return ModerationVerdict(flagged=True, categories=items, severe=False)
+                categories += [str(i) for i in (verdict.get("items") or [])] or ["weapon"]
+            if verdict.get("disturbing"):
+                categories.append("disturbing")
+            if categories:
+                return ModerationVerdict(flagged=True, categories=categories, severe=False)
         except Exception:  # noqa: BLE001 — 스캔 실패가 정상 업로드를 막으면 안 됨
-            logger.exception("위험 물품 스캔 실패 (통과 처리)")
+            logger.exception("위험 물품/공포 이미지 스캔 실패 (통과 처리)")
         return ModerationVerdict(flagged=False)
 
 

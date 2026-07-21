@@ -61,15 +61,21 @@ class PhotoService:
         # 유해 콘텐츠(나체·성적·폭력 등) 차단 — 저장 전 최상류에서 거부
         verdict = await get_moderation_provider().check(data)
         if verdict.flagged and not verdict.severe:
-            # 위험 물품(칼·총 등) — 차단 + 경고 + 관리자 알림 (스트라이크는 없음)
+            # 위험 물품(칼·총) 또는 공포·혐오 이미지 — 차단 + 경고 + 관리자 알림 (스트라이크 없음)
+            disturbing = "disturbing" in verdict.categories
             await notify_admin(
-                f"⚠️ 위험 물품 포함 사진 차단 — user {user_id}, "
-                f"감지: {', '.join(verdict.categories)}"
+                f"⚠️ {'공포·혐오 이미지' if disturbing else '위험 물품 포함 사진'} 차단 — "
+                f"user {user_id}, 감지: {', '.join(verdict.categories)}"
+            )
+            message = (
+                "공포감이나 혐오감을 줄 수 있는 사진은 사용할 수 없어요. 다른 사진을 선택해 주세요."
+                if disturbing
+                else "위험한 물건(무기 등)이 포함된 사진은 사용할 수 없어요. 다른 사진을 선택해 주세요."
             )
             raise InvalidPhotoError(
-                "위험한 물건(무기 등)이 포함된 사진은 사용할 수 없어요. 다른 사진을 선택해 주세요.",
+                message,
                 detail={
-                    "reject_reason": "DANGEROUS_CONTENT",
+                    "reject_reason": "DISTURBING_CONTENT" if disturbing else "DANGEROUS_CONTENT",
                     "categories": verdict.categories,
                     "banned": False,
                 },
