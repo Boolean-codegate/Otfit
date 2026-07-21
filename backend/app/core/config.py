@@ -63,6 +63,8 @@ class Settings(BaseSettings):
     embedding_dim: int = 512
 
     # 입력 검증 (MVP 범위)
+    max_upload_mb: int = 10  # 업로드 이미지 크기 상한
+    auth_rate_limit_per_minute: int = 20  # /auth/* 무차별 대입 방어
     min_photo_short_side: int = 512
     max_occlusion_score: float = 0.4
     allowed_poses: tuple[str, ...] = ("front", "three_quarter")
