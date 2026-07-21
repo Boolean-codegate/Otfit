@@ -96,7 +96,7 @@ class HomeHeroCard extends StatelessWidget {
                                 const EdgeInsets.symmetric(horizontal: 20),
                           ),
                           icon: const Icon(Icons.add_photo_alternate_rounded),
-                          label: const Text('내 변신 시작하기'),
+                          label: const Text('피팅 시작하기'),
                         ),
                       ),
                       TextButton.icon(
@@ -105,7 +105,7 @@ class HomeHeroCard extends StatelessWidget {
                           foregroundColor: AppColors.surface,
                         ),
                         icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                        label: const Text('변신 구경하기'),
+                        label: const Text('피팅 구경하기'),
                       ),
                     ],
                   ),
