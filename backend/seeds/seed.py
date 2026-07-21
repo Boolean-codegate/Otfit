@@ -45,19 +45,19 @@ PRICE_RANGE = {  # (최소, 최대) 원
 # 실사진 상품 수작업 메타데이터 — filename: (title, brand, price, style, color, pattern, length, material)
 # 카테고리는 폴더 위치가 결정한다 (r01~r13은 origin/main의 REAL_PRODUCTS에서 가져옴)
 CURATED = {
-    "r01.png": ("네이비 스트라이프 반팔 니트 가디건", "OTFIT PARTNER", 49000, "casual", "navy", "stripe", "regular", "knit"),
-    "r02.png": ("윙 스터드 크롭 집업 후드", "OTFIT PARTNER", 69000, "street", "black", "graphic", "crop", "fleece"),
-    "r03.png": ("그레이 케이블 니트 가디건", "OTFIT PARTNER", 59000, "classic", "gray", "solid", "regular", "wool"),
-    "r04.png": ("오트밀 와플 헨리넥 롱슬리브", "OTFIT PARTNER", 33000, "casual", "oatmeal", "solid", "regular", "cotton"),
-    "r05.png": ("블랙 헨리넥 루즈핏 롱슬리브", "OTFIT PARTNER", 35000, "street", "black", "solid", "long", "cotton"),
-    "r06.png": ("버건디 롤업 슬리브 반팔 티", "OTFIT PARTNER", 29000, "casual", "burgundy", "solid", "regular", "cotton"),
-    "r07.png": ("에크루 스탠드칼라 스냅 풀오버 셔츠", "OTFIT PARTNER", 55000, "casual", "ivory", "solid", "regular", "cotton"),
-    "r08.png": ("네이비 케이블 반팔 니트 가디건", "OTFIT PARTNER", 47000, "casual", "navy", "solid", "regular", "knit"),
-    "r09.png": ("화이트 오프숄더 레터링 롱슬리브", "OTFIT PARTNER", 31000, "romantic", "white", "graphic", "regular", "jersey"),
-    "r10.png": ("차콜 레이어드 크롭 하프슬리브 톱", "OTFIT PARTNER", 28000, "street", "charcoal", "solid", "crop", "jersey"),
-    "r11.png": ("블루 버튼 브이넥 니트 톱", "OTFIT PARTNER", 39000, "romantic", "blue", "solid", "regular", "knit"),
-    "r12.png": ("네이비 스냅 헨리넥 반팔 티", "OTFIT PARTNER", 27000, "casual", "navy", "solid", "regular", "cotton"),
-    "r13.png": ("네이비 체크 오버 셔츠", "OTFIT PARTNER", 52000, "casual", "navy", "check", "regular", "cotton"),
+    "r01.png": ("네이비 스트라이프 반팔 니트 가디건", "노드유", 49000, "casual", "navy", "stripe", "regular", "knit"),
+    "r02.png": ("윙 스터드 크롭 집업 후드", "헬레네파리스", 69000, "street", "black", "graphic", "crop", "fleece"),
+    "r03.png": ("그레이 케이블 니트 가디건", "노드유", 59000, "classic", "gray", "solid", "regular", "wool"),
+    "r04.png": ("오트밀 와플 헨리넥 롱슬리브", "언더오프", 33000, "casual", "oatmeal", "solid", "regular", "cotton"),
+    "r05.png": ("블랙 헨리넥 루즈핏 롱슬리브", "러기드하우스", 35000, "street", "black", "solid", "long", "cotton"),
+    "r06.png": ("버건디 롤업 슬리브 반팔 티", "키뮤어", 29000, "casual", "burgundy", "solid", "regular", "cotton"),
+    "r07.png": ("에크루 스탠드칼라 스냅 풀오버 셔츠", "러기드하우스", 55000, "casual", "ivory", "solid", "regular", "cotton"),
+    "r08.png": ("네이비 케이블 반팔 니트 가디건", "효지", 47000, "casual", "navy", "solid", "regular", "knit"),
+    "r09.png": ("화이트 오프숄더 레터링 롱슬리브", "오드민", 31000, "romantic", "white", "graphic", "regular", "jersey"),
+    "r10.png": ("차콜 레이어드 크롭 하프슬리브 톱", "헬레네파리스", 28000, "street", "charcoal", "solid", "crop", "jersey"),
+    "r11.png": ("블루 버튼 브이넥 니트 톱", "미쏘", 39000, "romantic", "blue", "solid", "regular", "knit"),
+    "r12.png": ("네이비 스냅 헨리넥 반팔 티", "브렌슨", 27000, "casual", "navy", "solid", "regular", "cotton"),
+    "r13.png": ("네이비 체크 오버 셔츠", "유니온블루", 52000, "casual", "navy", "check", "regular", "cotton"),
     # 폴더 스캔 이미지 중 파일명 힌트만으로는 실물과 안 맞는 것들 (이미지 확인 후 수기 등록)
     "floral_dress.jpg": ("레드 플레어 롱 원피스", "MUSE", 89000, "romantic", "red", "solid", "long", "chiffon"),
     "top_1.png": ("버건디 라운드넥 반팔 티", "MONO", 29000, "casual", "burgundy", "solid", "regular", "cotton"),
@@ -107,6 +107,7 @@ def build_product_fields(category: str, filename: str) -> dict:
             "attributes": {
                 "color": color, "pattern": pattern, "length": length,
                 "material": material, "style": style,
+                "source": "무신사",  # 이미지 출처 (데모 시연용, 출처 표기 원칙)
             },
         }
 
