@@ -3,7 +3,7 @@
 > **온라인의 모든 옷이 내 피팅룸 안으로. 필요한 건 사진 한 장.**
 >
 > 사진 한 장으로 실제 판매 중인 옷·하의·신발·액세서리를 조합해 입어보고(AI 피팅),
-> 마음에 들면 바로 구매하고, 비포→애프터 변신을 피드에 공유하는 **AI 쇼퍼블 패션 플랫폼**.
+> 마음에 들면 바로 구매하고, 비포→애프터 변신을 피드에 공유하는 **AI 패션 플랫폼**.
 
 ## 🔗 라이브 데모
 
@@ -41,15 +41,11 @@ FastAPI ── Celery Worker (버전링된 큐)
 Supabase Postgres(pgvector) · Upstash Redis(큐) · Cloudflare R2(이미지)
 ```
 
-- **계약 우선 개발**: [api_contract.md](api_contract.md)가 백엔드↔프론트의 유일한 소스.
-- **프로바이더 추상화**: vision/embedding/generation/moderation을 컴포넌트별로 mock ↔ live 전환
-  (`PROVIDER_MODE` + `*_PROVIDER` env) — API 키 없이도 전체 플로우가 동작합니다.
-
 ## 📁 레포 구조
 
 | 경로 | 내용 |
 |---|---|
-| [api_contract.md](api_contract.md) | **API 계약 (유일한 소스)** — 인증/사진/생성/피드/신고/마이페이지 전 명세 |
+| [api_contract.md](api_contract.md) | **API 계약** — 인증/사진/생성/피드/신고/마이페이지 전 명세 |
 | [backend/](backend/) | FastAPI + Celery + pgvector 백엔드, 시드/마이그레이션/테스트 |
 | [frontend/](frontend/) | Flutter 웹 앱 (모바일·PC 반응형) |
 | [demo/](demo/) | 데모 영상 |
