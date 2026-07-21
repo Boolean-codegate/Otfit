@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 14
 
+    # 소셜 로그인 — 설정 시 구글 id_token의 aud를 검증 (카카오는 서버 키 불필요)
+    google_client_id: str = ""
+
     database_url: str = "postgresql+asyncpg://otfit:otfit@localhost:5432/otfit"
     sync_database_url: str = "postgresql+psycopg2://otfit:otfit@localhost:5432/otfit"
     redis_url: str = "redis://localhost:6379/0"

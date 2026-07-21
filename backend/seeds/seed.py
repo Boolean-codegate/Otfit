@@ -2,9 +2,11 @@
 
 backend/seeds/catalog_images/{top|jacket|shirt|dress}/ 의 이미지 1장 = 상품 1개.
 - 폴더명 = category (계약: top|jacket|shirt|dress 만 허용)
-- title/brand/price 는 데모용 생성 (파일명 힌트: 색상/소재/패턴 토큰 활용)
-- image_url: S3_PUBLIC_BASE_URL 있으면 공개 URL, 없으면 R2 key만 저장
+- CURATED에 파일명이 있으면 수작업 메타데이터 사용 (실사진 상품 r01~r13),
+  없으면 파일명 힌트(색상/소재/패턴 토큰)로 데모용 생성
+- image_url: R2_PUBLIC_URL 있으면 공개 URL, 없으면 R2 key만 저장
   (응답 시점에 presigned URL로 변환 — app/services/catalog.py)
+  ※ Segmind garm_img가 공개 접근 URL을 요구하므로 /media 로컬 서빙은 쓰지 않는다.
 
 선행: docker-compose exec api python -m scripts.upload_catalog  (R2 업로드)
 실행: docker-compose exec api python -m seeds.seed
@@ -40,6 +42,24 @@ PRICE_RANGE = {  # (최소, 최대) 원
     "dress": (49000, 129000),
 }
 
+# 실사진 상품 수작업 메타데이터 — filename: (title, brand, price, style, color, pattern, length, material)
+# 카테고리는 폴더 위치가 결정한다 (r01~r13은 origin/main의 REAL_PRODUCTS에서 가져옴)
+CURATED = {
+    "r01.png": ("네이비 스트라이프 반팔 니트 가디건", "OTFIT PARTNER", 49000, "casual", "navy", "stripe", "regular", "knit"),
+    "r02.png": ("윙 스터드 크롭 집업 후드", "OTFIT PARTNER", 69000, "street", "black", "graphic", "crop", "fleece"),
+    "r03.png": ("그레이 케이블 니트 가디건", "OTFIT PARTNER", 59000, "classic", "gray", "solid", "regular", "wool"),
+    "r04.png": ("오트밀 와플 헨리넥 롱슬리브", "OTFIT PARTNER", 33000, "casual", "oatmeal", "solid", "regular", "cotton"),
+    "r05.png": ("블랙 헨리넥 루즈핏 롱슬리브", "OTFIT PARTNER", 35000, "street", "black", "solid", "long", "cotton"),
+    "r06.png": ("버건디 롤업 슬리브 반팔 티", "OTFIT PARTNER", 29000, "casual", "burgundy", "solid", "regular", "cotton"),
+    "r07.png": ("에크루 스탠드칼라 스냅 풀오버 셔츠", "OTFIT PARTNER", 55000, "casual", "ivory", "solid", "regular", "cotton"),
+    "r08.png": ("네이비 케이블 반팔 니트 가디건", "OTFIT PARTNER", 47000, "casual", "navy", "solid", "regular", "knit"),
+    "r09.png": ("화이트 오프숄더 레터링 롱슬리브", "OTFIT PARTNER", 31000, "romantic", "white", "graphic", "regular", "jersey"),
+    "r10.png": ("차콜 레이어드 크롭 하프슬리브 톱", "OTFIT PARTNER", 28000, "street", "charcoal", "solid", "crop", "jersey"),
+    "r11.png": ("블루 버튼 브이넥 니트 톱", "OTFIT PARTNER", 39000, "romantic", "blue", "solid", "regular", "knit"),
+    "r12.png": ("네이비 스냅 헨리넥 반팔 티", "OTFIT PARTNER", 27000, "casual", "navy", "solid", "regular", "cotton"),
+    "r13.png": ("네이비 체크 오버 셔츠", "OTFIT PARTNER", 52000, "casual", "navy", "check", "regular", "cotton"),
+}
+
 # 파일명 힌트 사전 (영문 토큰 → 한글)
 COLORS = {
     "white": "화이트", "black": "블랙", "ivory": "아이보리", "navy": "네이비",
@@ -70,7 +90,20 @@ def _pick(mapping: dict, tokens: list[str]) -> tuple[str | None, str | None]:
 
 
 def build_product_fields(category: str, filename: str) -> dict:
-    """파일명 힌트 + 결정적 해시로 데모 상품 메타 생성."""
+    """CURATED 우선, 없으면 파일명 힌트 + 결정적 해시로 데모 상품 메타 생성."""
+    curated = CURATED.get(filename)
+    if curated:
+        title, brand, price, style, color, pattern, length, material = curated
+        return {
+            "title": title,
+            "brand": brand,
+            "price": price,
+            "attributes": {
+                "color": color, "pattern": pattern, "length": length,
+                "material": material, "style": style,
+            },
+        }
+
     stem = Path(filename).stem
     digest = int(hashlib.sha256(f"{category}/{filename}".encode()).hexdigest()[:8], 16)
     tokens = _tokens(stem)
@@ -144,7 +177,7 @@ async def seed() -> None:
             session.add(partner)
             await session.flush()
 
-        # 구 더미 시드(SKU-%) 제거 (연결된 mock 결과는 CASCADE로 함께 삭제)
+        # 구 더미 시드(SKU-%) 제거 — placeholder image_url이라 브라우저/Segmind 모두 실패
         removed = await session.execute(
             delete(Product).where(Product.external_id.like("SKU-%"))
         )
@@ -217,7 +250,8 @@ async def seed() -> None:
 
         await session.commit()
         print(
-            f"seed 완료: 카탈로그 {len(catalog)}개 (신규 {created}, 갱신 {updated}), "
+            f"seed 완료: 카탈로그 {len(catalog)}개 (신규 {created}, 갱신 {updated}, "
+            f"수작업 메타 {sum(1 for _, f in catalog if f in CURATED)}개), "
             f"구 더미 삭제 {removed.rowcount}건, 테스트 유저 {TEST_EMAIL} / {TEST_PASSWORD}"
         )
 
