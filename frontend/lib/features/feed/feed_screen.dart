@@ -17,7 +17,6 @@ class FeedScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final feed = ref.watch(feedProvider);
     final sort = ref.watch(feedSortProvider);
-    final platforms = ref.watch(feedPlatformsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -63,28 +62,6 @@ class FeedScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: platforms.maybeWhen(
-                    data: (items) => items.isEmpty
-                        ? const SizedBox.shrink()
-                        : SizedBox(
-                            height: 84,
-                            child: ListView.separated(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 8,
-                              ),
-                              scrollDirection: Axis.horizontal,
-                              itemCount: items.length,
-                              separatorBuilder: (_, _) =>
-                                  const SizedBox(width: 14),
-                              itemBuilder: (context, index) =>
-                                  _PlatformStory(platform: items[index]),
-                            ),
-                          ),
-                    orElse: () => const SizedBox.shrink(),
                   ),
                 ),
                 feed.when(
@@ -213,49 +190,6 @@ class _SortChip extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _PlatformStory extends StatelessWidget {
-  const _PlatformStory({required this.platform});
-
-  final FeedPlatform platform;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: AppColors.primaryGradient,
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            platform.name.characters.first,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: 18,
-            ),
-          ),
-        ),
-        const SizedBox(height: 5),
-        SizedBox(
-          width: 64,
-          child: Text(
-            platform.name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.labelSmall,
-          ),
-        ),
-      ],
     );
   }
 }
