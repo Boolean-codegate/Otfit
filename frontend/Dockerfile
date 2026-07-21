@@ -10,16 +10,11 @@ ARG API_BASE_URL=https://port-0-otfit-api-m7c8oc297ff7fd19.sel4.cloudtype.app
 # 로그인 화면 도입 — 자동 로그인(DEV_LOGIN)은 기본 비활성. 필요 시 build arg로 주입.
 ARG DEV_LOGIN_EMAIL=
 ARG DEV_LOGIN_PASSWORD=
-# 소셜 로그인 키 (미설정 시 버튼은 안내만 표시)
-ARG KAKAO_JS_KEY=
-ARG GOOGLE_CLIENT_ID=
 
 RUN flutter pub get && flutter build web --release \
     --dart-define=API_BASE_URL=${API_BASE_URL} \
     --dart-define=DEV_LOGIN_EMAIL=${DEV_LOGIN_EMAIL} \
-    --dart-define=DEV_LOGIN_PASSWORD=${DEV_LOGIN_PASSWORD} \
-    --dart-define=KAKAO_JS_KEY=${KAKAO_JS_KEY} \
-    --dart-define=GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+    --dart-define=DEV_LOGIN_PASSWORD=${DEV_LOGIN_PASSWORD}
 
 # 2단계: 정적 서빙 (비루트 nginx — Cloudtype 권한 제약 대응, 8080 리슨)
 FROM nginxinc/nginx-unprivileged:alpine
