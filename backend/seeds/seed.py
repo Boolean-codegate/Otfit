@@ -75,6 +75,7 @@ CURATED = {
     "r23.png": ("사이드집 청키 첼시부츠", "커스텀에이드", 129000, "minimal", "black", "solid", "regular", "leather"),
     "r24.png": ("벡티브 베르사 러닝화", "노스페이스", 139000, "casual", "mint", "solid", "regular", "mesh"),
     "r25.png": ("에센셜 화이트 러닝화", "르꼬끄", 79000, "casual", "white", "solid", "regular", "mesh"),
+    "r26.png": ("스냅 하이넥 플리스 풀오버", "더콜디스트모먼트", 69000, "casual", "olive", "solid", "regular", "fleece"),
     # 폴더 스캔 이미지 중 파일명 힌트만으로는 실물과 안 맞는 것들 (이미지 확인 후 수기 등록)
     "floral_dress.jpg": ("레드 플레어 롱 원피스", "MUSE", 89000, "romantic", "red", "solid", "long", "chiffon"),
     "top_1.png": ("버건디 라운드넥 반팔 티", "MONO", 29000, "casual", "burgundy", "solid", "regular", "cotton"),
@@ -111,6 +112,13 @@ MUSINSA_URLS = {
     "r23.png": "https://www.musinsa.com/products/6467168",  # 커스텀에이드 부츠
     "r24.png": "https://www.musinsa.com/products/6065956",  # 노스페이스 러닝화
     "r25.png": "https://www.musinsa.com/products/4777376",  # 르꼬끄 운동화
+    # 자사몰 상품 (무신사 외 채널)
+    "r26.png": "https://thecoldestmoment.com/product/detail.html?product_no=1762&cate_no=26&display_group=1",  # 더콜디스트모먼트 플리스
+}
+
+# 이미지 출처가 무신사가 아닌 상품 (기본값: 무신사)
+SOURCE_OVERRIDES = {
+    "r26.png": "thecoldestmoment 자사몰",
 }
 
 # 파일명 힌트 사전 (영문 토큰 → 한글)
@@ -154,7 +162,7 @@ def build_product_fields(category: str, filename: str) -> dict:
             "attributes": {
                 "color": color, "pattern": pattern, "length": length,
                 "material": material, "style": style,
-                "source": "무신사",  # 이미지 출처 (데모 시연용, 출처 표기 원칙)
+                "source": SOURCE_OVERRIDES.get(filename, "무신사"),  # 이미지 출처 (데모 시연용, 출처 표기 원칙)
             },
         }
 
