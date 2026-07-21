@@ -52,8 +52,18 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
   }
 
   Future<void> _showFilterSheet({required String type}) async {
+    // 쇼핑몰별 필터는 상품에 몰 구분이 아직 없어 미구현 — UI는 유지하고 안내만
+    if (type == '쇼핑몰') {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('쇼핑몰별 필터는 추후 제공될 예정이에요. 지금은 파트너몰 상품을 모아 보여드려요.'),
+          ),
+        );
+      return;
+    }
     final options = switch (type) {
-      '쇼핑몰' => <String?>[null, 'MUSINSA', '29CM', 'W CONCEPT', 'ABLY'],
       '가격대' => <String?>[null, '5만원 이하', '5~10만원', '10만원 이상'],
       '색상' => <String?>[null, '블랙', '화이트', '아이보리', '네이비', '블루'],
       _ => <String?>['인기순', '낮은 가격순', '높은 할인순'],
