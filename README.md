@@ -25,26 +25,32 @@
 ## 🧱 아키텍처
 
 ```
-Flutter Web (모바일/PC 반응형)
-   │  REST (api_contract.md — 단일 계약)
+Flutter Web (모바일·PC 반응형)
+   │  REST API — api_contract.md를 단일 계약으로 사용
    ▼
-FastAPI ── Celery Worker (버전링된 큐)
-   │            │  AI 생성 파이프라인: 분석 → 검색 → 생성 → 품질검사
+FastAPI ── Celery Worker (버전별 작업 큐)
+   │            │
+   │            │  AI 피팅 파이프라인
+   │            │  분석 → 상품 검색 → 이미지 생성 → 품질 검사
    │            ▼
-   │      OpenAI (GPT-5.6 Sol 오케스트레이션 + gpt-image-2 이미지 생성)
-   │      Segmind IDM-VTON (대체 생성 경로) · omni-moderation (유해 콘텐츠)
+   │      OpenAI
+   │      GPT-5.6 Sol 오케스트레이션 · gpt-image-2 이미지 생성
+   │
+   │      Segmind IDM-VTON 대체 생성 경로
+   │      omni-moderation 유해 콘텐츠 검사
    ▼
-Supabase Postgres(pgvector) · Upstash Redis(큐) · Cloudflare R2(이미지)
+Supabase Postgres + pgvector · Upstash Redis · Cloudflare R2
+데이터·벡터 검색              작업 큐          이미지 저장소
 ```
 
 ## 📁 레포 구조
 
 | 경로 | 내용 |
 |---|---|
-| [api_contract.md](api_contract.md) | **API 계약** — 인증/사진/생성/피드/신고/마이페이지 전 명세 |
-| [backend/](backend/) | FastAPI + Celery + pgvector 백엔드, 시드/마이그레이션/테스트 |
-| [frontend/](frontend/) | Flutter 웹 앱 (모바일·PC 반응형) |
-| [demo/](demo/) | 데모 영상 |
+| [api_contract.md](api_contract.md) | **단일 API 계약서** — 인증, 사진, AI 피팅, 피드, 신고, 마이페이지 전체 명세 |
+| [backend/](backend/) | FastAPI·Celery·pgvector 기반 백엔드와 시드, 마이그레이션, 테스트 |
+| [frontend/](frontend/) | 모바일·PC에 대응하는 Flutter 웹 앱 |
+| [demo/](demo/) | 주요 기능을 담은 데모 영상 |
 
 ## 🚀 로컬 실행
 
