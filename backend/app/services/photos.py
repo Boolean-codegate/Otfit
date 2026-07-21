@@ -10,6 +10,7 @@ from app.core.errors import AppError, ForbiddenError, InvalidPhotoError, NotFoun
 from app.models import Photo, PhotoAnalysis
 from app.providers.base import VisionAnalysis
 from app.providers.factory import get_vision_provider
+from app.providers.moderation import get_moderation_provider
 from app.repositories.consents import ConsentRepository
 from app.repositories.photos import PhotoRepository
 from app.storage.base import get_storage
@@ -55,6 +56,14 @@ class PhotoService:
                 data = buf.getvalue()
         except UnidentifiedImageError as exc:
             raise InvalidPhotoError("이미지 파일이 아닙니다.") from exc
+
+        # 유해 콘텐츠(나체·성적·폭력 등) 차단 — 저장 전 최상류에서 거부
+        verdict = await get_moderation_provider().check(data)
+        if verdict.flagged:
+            raise InvalidPhotoError(
+                "커뮤니티 가이드라인에 맞지 않는 이미지입니다.",
+                detail={"reject_reason": "UNSAFE_CONTENT", "categories": verdict.categories},
+            )
 
         photo_id = uuid.uuid4()
         key = f"photos/{user_id}/{photo_id}.jpg"

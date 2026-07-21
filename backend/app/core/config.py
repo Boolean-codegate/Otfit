@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     vision_provider: str = ""
     embedding_provider: str = ""
     generation_provider: str = ""
+    moderation_provider: str = ""  # 유해 이미지 차단: mock | openai(=live)
     # 의상 교체 생성: Segmind IDM-VTON (live)
     segmind_api_key: str = ""
     segmind_api_url: str = "https://api.segmind.com/v1/idm-vton"
@@ -84,6 +85,7 @@ class Settings(BaseSettings):
             "vision": self.vision_provider,
             "embedding": self.embedding_provider,
             "generation": self.generation_provider,
+            "moderation": self.moderation_provider,
         }[component].strip().lower()
         return override or self.provider_mode
 
