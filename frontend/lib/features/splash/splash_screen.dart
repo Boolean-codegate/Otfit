@@ -25,7 +25,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     if (!mounted) return;
 
     final hasCompletedOnboarding = ref.read(onboardingCompletedProvider);
-    context.go(hasCompletedOnboarding ? '/home' : '/onboarding');
+    if (!hasCompletedOnboarding) {
+      context.go('/onboarding');
+      return;
+    }
+    // 저장된 토큰으로 세션 복구 시도 → 실패 시 로그인 화면
+    final user = await ref.read(authSessionProvider.future);
+    if (!mounted) return;
+    context.go(user == null ? '/login' : '/home');
   }
 
   @override

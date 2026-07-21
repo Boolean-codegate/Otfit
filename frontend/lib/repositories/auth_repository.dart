@@ -1,7 +1,7 @@
 import '../core/network/api_client.dart';
 import '../models/fitting_result.dart' show User;
 
-/// 계약 §1: /auth/register, /auth/login, /auth/refresh, GET /me
+/// 계약 §1: /auth/register, /auth/login, /auth/social, /auth/refresh, GET /me
 abstract class AuthRepository {
   Future<User> register({
     required String email,
@@ -10,6 +10,10 @@ abstract class AuthRepository {
   });
 
   Future<User> login({required String email, required String password});
+
+  /// 카카오/구글 SDK 토큰으로 로그인 (kakao → access_token, google → id_token).
+  /// 미가입 사용자는 서버가 자동 가입 처리한다.
+  Future<User> socialLogin({required String provider, required String token});
 
   Future<User> me();
 
@@ -55,6 +59,14 @@ class HttpAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<User> socialLogin({required String provider, required String token}) {
+    return _authenticate('/auth/social', <String, dynamic>{
+      'provider': provider,
+      'token': token,
+    });
+  }
+
+  @override
   Future<User> me() {
     return guardApi(() async {
       final response = await _client.dio.get<Map<String, dynamic>>('/me');
@@ -96,6 +108,12 @@ class MockAuthRepository implements AuthRepository {
   @override
   Future<User> login({required String email, required String password}) async =>
       _user;
+
+  @override
+  Future<User> socialLogin({
+    required String provider,
+    required String token,
+  }) async => _user;
 
   @override
   Future<User> me() async => _user;

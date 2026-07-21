@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/login_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/photo/photo_selection_screen.dart';
@@ -25,6 +26,11 @@ final GoRouter appRouter = GoRouter(
       path: '/onboarding',
       pageBuilder: (context, state) =>
           _fadePage(state: state, child: const OnboardingScreen()),
+    ),
+    GoRoute(
+      path: '/login',
+      pageBuilder: (context, state) =>
+          _fadePage(state: state, child: const LoginScreen()),
     ),
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) =>

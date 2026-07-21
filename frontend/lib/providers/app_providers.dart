@@ -78,6 +78,76 @@ final currentUserProvider = FutureProvider<User>((ref) {
   return ref.watch(authRepositoryProvider).me();
 });
 
+/// 로그인 세션 상태. null = 미로그인 → 로그인 화면.
+/// - mock 모드: 항상 mock 유저로 로그인된 상태
+/// - HTTP 모드: 저장된 토큰으로 GET /me 시도 (DEV_LOGIN 설정 시 자동 로그인)
+final authSessionProvider = AsyncNotifierProvider<AuthSessionController, User?>(
+  AuthSessionController.new,
+);
+
+class AuthSessionController extends AsyncNotifier<User?> {
+  @override
+  Future<User?> build() async {
+    try {
+      return await ref.read(authRepositoryProvider).me();
+    } on Object {
+      return null; // 토큰 없음/만료 → 미로그인
+    }
+  }
+
+  Future<void> _run(Future<User> Function(AuthRepository repo) action) async {
+    final repository = ref.read(authRepositoryProvider);
+    state = const AsyncValue<User?>.loading();
+    try {
+      final user = await action(repository);
+      state = AsyncValue<User?>.data(user);
+    } on Object catch (error, stackTrace) {
+      state = AsyncValue<User?>.error(error, stackTrace);
+      rethrow;
+    }
+  }
+
+  Future<void> loginWithEmail({
+    required String email,
+    required String password,
+  }) {
+    return _run((repo) => repo.login(email: email, password: password));
+  }
+
+  Future<void> registerWithEmail({
+    required String email,
+    required String password,
+    required String nickname,
+  }) {
+    return _run(
+      (repo) =>
+          repo.register(email: email, password: password, nickname: nickname),
+    );
+  }
+
+  Future<void> loginWithSocial({
+    required String provider,
+    required String token,
+  }) {
+    return _run((repo) => repo.socialLogin(provider: provider, token: token));
+  }
+
+  Future<void> refreshMe() async {
+    try {
+      state = AsyncValue<User?>.data(
+        await ref.read(authRepositoryProvider).me(),
+      );
+    } on Object {
+      state = const AsyncValue<User?>.data(null);
+    }
+  }
+
+  Future<void> logout() async {
+    await ref.read(authRepositoryProvider).logout();
+    state = const AsyncValue<User?>.data(null);
+  }
+}
+
 final productsProvider = FutureProvider<List<Product>>((ref) {
   return ref.watch(productRepositoryProvider).getProducts();
 });

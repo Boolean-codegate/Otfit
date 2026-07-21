@@ -130,8 +130,9 @@ void main() {
     expect(job.status, GenerationStatus.queued);
     expect(job.creditsCharged, 1);
 
-    for (var attempt = 0; attempt < 15 && !job.isTerminal; attempt++) {
-      await Future<void>.delayed(const Duration(seconds: 2));
+    // 실 생성(gpt-image-2)은 2분 안팎 걸릴 수 있어 최대 4분 폴링
+    for (var attempt = 0; attempt < 80 && !job.isTerminal; attempt++) {
+      await Future<void>.delayed(const Duration(seconds: 3));
       job = await tryOn.getGenerationJob(job.jobId);
     }
     expect(job.status, GenerationStatus.done);
@@ -164,7 +165,7 @@ void main() {
 
     // 정리
     await tryOn.deletePhoto(photo.id);
-  }, skip: skip, timeout: const Timeout(Duration(minutes: 3)));
+  }, skip: skip, timeout: const Timeout(Duration(minutes: 6)));
 
   test('에러 매핑: 잘못된 로그인 → ApiException(UNAUTHORIZED)', () async {
     final fresh = ApiClient(baseUrl: baseUrl, tokens: InMemoryTokenStorage());

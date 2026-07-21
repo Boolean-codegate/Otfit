@@ -168,6 +168,16 @@ class ProfileScreen extends ConsumerWidget {
                           applicationLegalese: '© 2026 OTFIT',
                         ),
                       ),
+                      _MenuItem(
+                        icon: Icons.logout_rounded,
+                        label: '로그아웃',
+                        onTap: () async {
+                          await ref
+                              .read(authSessionProvider.notifier)
+                              .logout();
+                          if (context.mounted) context.go('/login');
+                        },
+                      ),
                     ],
                   ),
                 ],

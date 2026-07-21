@@ -49,7 +49,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Future<void> _handleNext() async {
     if (_isLastPage) {
       ref.read(onboardingCompletedProvider.notifier).complete();
-      if (mounted) context.go('/home');
+      final user = await ref.read(authSessionProvider.future);
+      if (mounted) context.go(user == null ? '/login' : '/home');
       return;
     }
 

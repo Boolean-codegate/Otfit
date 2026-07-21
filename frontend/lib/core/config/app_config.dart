@@ -21,4 +21,10 @@ abstract final class AppConfig {
 
   static bool get hasDevLogin =>
       devLoginEmail.isNotEmpty && devLoginPassword.isNotEmpty;
+
+  /// 소셜 로그인 키 (미설정 시 버튼은 안내만 표시 — web-login-demo와 동일한 정책).
+  static const String kakaoJsKey = String.fromEnvironment('KAKAO_JS_KEY');
+  static const String googleClientId = String.fromEnvironment(
+    'GOOGLE_CLIENT_ID',
+  );
 }
