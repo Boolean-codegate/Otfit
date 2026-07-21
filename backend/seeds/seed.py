@@ -1,11 +1,16 @@
-"""시드: 협력사 1 + 더미 상품 40개(임베딩 포함) + 테스트 유저.
+"""시드: 협력사 1 + 더미 상품 40개 + 실사진 상품 13개(임베딩 포함) + 테스트 유저.
 
 실행: docker-compose exec api python -m seeds.seed
 mock EmbeddingProvider가 결정적이므로 몇 번을 돌려도 같은 임베딩이 생성된다.
+
+실사진 상품: seeds/assets/products/*.png 를 스토리지로 복사하고
+/media/products/... URL로 서빙한다 (데모용 실제 상품 이미지).
 """
 import asyncio
+import shutil
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
@@ -62,6 +67,25 @@ PRODUCTS = [
     ("테일러드 셔츠 드레스", "CLASSIQ", "dress", 99000, "classic", "khaki", "solid", "midi", "cotton"),
 ]
 
+ASSETS_DIR = Path(__file__).parent / "assets" / "products"
+
+# 실사진 상품 (filename, title, brand, category, price, style, color, pattern, length, material)
+REAL_PRODUCTS = [
+    ("r01.png", "네이비 스트라이프 반팔 니트 가디건", "OTFIT PARTNER", "top", 49000, "casual", "navy", "stripe", "regular", "knit"),
+    ("r02.png", "윙 스터드 크롭 집업 후드", "OTFIT PARTNER", "jacket", 69000, "street", "black", "graphic", "crop", "fleece"),
+    ("r03.png", "그레이 케이블 니트 가디건", "OTFIT PARTNER", "top", 59000, "classic", "gray", "solid", "regular", "wool"),
+    ("r04.png", "오트밀 와플 헨리넥 롱슬리브", "OTFIT PARTNER", "top", 33000, "casual", "oatmeal", "solid", "regular", "cotton"),
+    ("r05.png", "블랙 헨리넥 루즈핏 롱슬리브", "OTFIT PARTNER", "top", 35000, "street", "black", "solid", "long", "cotton"),
+    ("r06.png", "버건디 롤업 슬리브 반팔 티", "OTFIT PARTNER", "top", 29000, "casual", "burgundy", "solid", "regular", "cotton"),
+    ("r07.png", "에크루 스탠드칼라 스냅 풀오버 셔츠", "OTFIT PARTNER", "shirt", 55000, "casual", "ivory", "solid", "regular", "cotton"),
+    ("r08.png", "네이비 케이블 반팔 니트 가디건", "OTFIT PARTNER", "top", 47000, "casual", "navy", "solid", "regular", "knit"),
+    ("r09.png", "화이트 오프숄더 레터링 롱슬리브", "OTFIT PARTNER", "top", 31000, "romantic", "white", "graphic", "regular", "jersey"),
+    ("r10.png", "차콜 레이어드 크롭 하프슬리브 톱", "OTFIT PARTNER", "top", 28000, "street", "charcoal", "solid", "crop", "jersey"),
+    ("r11.png", "블루 버튼 브이넥 니트 톱", "OTFIT PARTNER", "top", 39000, "romantic", "blue", "solid", "regular", "knit"),
+    ("r12.png", "네이비 스냅 헨리넥 반팔 티", "OTFIT PARTNER", "top", 27000, "casual", "navy", "solid", "regular", "cotton"),
+    ("r13.png", "네이비 체크 오버 셔츠", "OTFIT PARTNER", "shirt", 52000, "casual", "navy", "check", "regular", "cotton"),
+]
+
 
 async def seed() -> None:
     settings = get_settings()
@@ -116,6 +140,46 @@ async def seed() -> None:
             session.add(product)
             created += 1
 
+        # 실사진 상품 13개: 이미지를 스토리지로 복사하고 /media URL로 서빙
+        media_products_dir = Path(settings.storage_dir) / "products"
+        media_products_dir.mkdir(parents=True, exist_ok=True)
+        real_created = 0
+        for index, (fname, title, brand, category, price, style, color, pattern, length, material) in enumerate(REAL_PRODUCTS):
+            src = ASSETS_DIR / fname
+            if src.exists():
+                shutil.copyfile(src, media_products_dir / fname)
+            image_url = f"{settings.base_url}/media/products/{fname}"
+            external_id = f"SKU-R{index + 1:03d}"
+            exists = (
+                await session.execute(
+                    select(Product).where(Product.partner_id == partner.id, Product.external_id == external_id)
+                )
+            ).scalar_one_or_none()
+            if exists:
+                exists.image_url = image_url  # base_url 변경 시 재시드로 갱신
+                continue
+            attributes = {
+                "color": color, "pattern": pattern, "length": length,
+                "material": material, "style": style,
+            }
+            text = f"{title} {brand} {category} {style} {color} {pattern} {length} {material}"
+            session.add(Product(
+                partner_id=partner.id,
+                external_id=external_id,
+                title=title,
+                brand=brand,
+                category=category,
+                price=price,
+                currency="KRW",
+                stock_status="in_stock",
+                product_url=f"https://shop.partner-shop.example/products/{external_id}",
+                image_url=image_url,
+                text_embedding=await embedder.embed_text(text),
+                image_embedding=await embedder.embed_text(f"image {text}"),
+                attributes=attributes,
+            ))
+            real_created += 1
+
         # 테스트 유저 (크레딧 100, 동의 완료)
         user = (await session.execute(select(User).where(User.email == TEST_EMAIL))).scalar_one_or_none()
         if user is None:
@@ -136,7 +200,11 @@ async def seed() -> None:
                 )
 
         await session.commit()
-        print(f"seed 완료: 상품 {created}개 신규 생성 (총 {len(PRODUCTS)}개 정의), 테스트 유저 {TEST_EMAIL} / {TEST_PASSWORD}")
+        print(
+            f"seed 완료: 더미 상품 {created}개 + 실사진 상품 {real_created}개 신규 생성 "
+            f"(정의: 더미 {len(PRODUCTS)} / 실사진 {len(REAL_PRODUCTS)}), "
+            f"테스트 유저 {TEST_EMAIL} / {TEST_PASSWORD}"
+        )
 
     await engine.dispose()
 
