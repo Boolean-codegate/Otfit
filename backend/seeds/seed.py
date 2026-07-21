@@ -1,7 +1,7 @@
 """시드: 실제 카탈로그(카테고리 폴더 기반) 상품 + 협력사 + 테스트 유저.
 
 backend/seeds/catalog_images/{top|jacket|shirt|dress}/ 의 이미지 1장 = 상품 1개.
-- 폴더명 = category (계약: top|jacket|shirt|dress 만 허용)
+- 폴더명 = category (top|jacket|shirt|dress|pants|accessory)
 - CURATED에 파일명이 있으면 수작업 메타데이터 사용 (실사진 상품 r01~r13),
   없으면 파일명 힌트(색상/소재/패턴 토큰)로 데모용 생성
 - image_url: R2_PUBLIC_URL 있으면 공개 URL, 없으면 R2 key만 저장
@@ -28,11 +28,11 @@ from app.providers.mock.embedding import MockEmbeddingProvider
 TEST_EMAIL = "test@otfit.app"
 TEST_PASSWORD = "test1234"
 
-CATEGORIES = ("top", "jacket", "shirt", "dress")
+CATEGORIES = ("top", "jacket", "shirt", "dress", "pants", "accessory")
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp"}
 IMAGES_DIR = Path(__file__).resolve().parent / "catalog_images"
 
-CATEGORY_NOUN = {"top": "톱", "jacket": "재킷", "shirt": "셔츠", "dress": "원피스"}
+CATEGORY_NOUN = {"top": "톱", "jacket": "재킷", "shirt": "셔츠", "dress": "원피스", "pants": "팬츠", "accessory": "액세서리"}
 BRANDS = ("ACME", "MUSE", "MONO", "CLASSIQ", "DENIMLAB", "STREETONE")
 STYLES = ("casual", "minimal", "street", "classic", "romantic")
 PRICE_RANGE = {  # (최소, 최대) 원
@@ -40,6 +40,8 @@ PRICE_RANGE = {  # (최소, 최대) 원
     "shirt": (29000, 89000),
     "jacket": (59000, 189000),
     "dress": (49000, 129000),
+    "pants": (29000, 99000),
+    "accessory": (9000, 59000),
 }
 
 # 실사진 상품 수작업 메타데이터 — filename: (title, brand, price, style, color, pattern, length, material)
