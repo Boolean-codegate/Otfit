@@ -190,11 +190,17 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
-class _ProfileCard extends StatelessWidget {
+class _ProfileCard extends ConsumerWidget {
   const _ProfileCard();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authSessionProvider).value;
+    final nickname = user?.nickname ?? 'OTFIT User';
+    final planLabel = user == null
+        ? 'Free Plan'
+        : '${user.email} · ${user.isPremium ? 'Premium' : 'Free Plan'}';
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -207,19 +213,21 @@ class _ProfileCard extends StatelessWidget {
           final compact = constraints.maxWidth < 520;
           final identity = Row(
             children: [
-              const _ProfileAvatar(),
+              _ProfileAvatar(nickname: nickname),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'OTFIT User',
+                      nickname,
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Free Plan',
+                      planLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.secondaryText,
                       ),
@@ -229,7 +237,7 @@ class _ProfileCard extends StatelessWidget {
               ),
             ],
           );
-          const credits = _CreditBadge();
+          final credits = _CreditBadge(count: user?.creditBalance);
           if (compact) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -250,28 +258,41 @@ class _ProfileCard extends StatelessWidget {
 }
 
 class _ProfileAvatar extends StatelessWidget {
-  const _ProfileAvatar();
+  const _ProfileAvatar({required this.nickname});
+
+  final String nickname;
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
       image: true,
-      label: 'OTFIT User 프로필',
+      label: '$nickname 프로필',
       child: Container(
         width: 62,
         height: 62,
+        alignment: Alignment.center,
         decoration: const BoxDecoration(
           gradient: AppColors.primaryGradient,
           shape: BoxShape.circle,
         ),
-        child: const Icon(Icons.person_rounded, color: Colors.white, size: 32),
+        child: Text(
+          nickname.characters.first,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+            fontSize: 24,
+          ),
+        ),
       ),
     );
   }
 }
 
 class _CreditBadge extends StatelessWidget {
-  const _CreditBadge();
+  const _CreditBadge({this.count});
+
+  /// 남은 크레딧 (생성 1회 = 1크레딧). null이면 세션 로딩 중.
+  final int? count;
 
   @override
   Widget build(BuildContext context) {
@@ -300,7 +321,7 @@ class _CreditBadge extends StatelessWidget {
                 ),
               ),
               Text(
-                '3회',
+                count == null ? '—' : '$count회',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: AppColors.primaryPurple,
                   fontWeight: FontWeight.w900,

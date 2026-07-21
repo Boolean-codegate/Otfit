@@ -80,7 +80,8 @@ void main() {
       screen: const ProfileScreen(),
     );
 
-    expect(find.text('OTFIT User'), findsOneWidget);
+    // 프로필 카드는 세션 유저 닉네임을 표시 (mock 세션 = '오핏')
+    expect(find.text('오핏'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

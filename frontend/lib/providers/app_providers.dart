@@ -503,6 +503,10 @@ final fittingResultsProvider =
 class FittingResultsController extends Notifier<List<FittingResult>> {
   @override
   List<FittingResult> build() {
+    // 로그인 계정이 바뀌면 세션 기록 초기화
+    ref.watch(authSessionProvider.select((session) => session.value?.id));
+    // 실 API 모드: 데모용 가짜 기록 없이 이번 세션의 실제 피팅만 쌓는다
+    if (!AppConfig.usesMockApi) return const <FittingResult>[];
     final now = DateTime.now();
     final photo = SelectedUserPhoto(
       name: 'sample_user.jpg',
