@@ -95,6 +95,8 @@ class Product {
              category == ProductCategories.jacket ||
              category == ProductCategories.shirt ||
              category == ProductCategories.dress ||
+             category == ProductCategories.pants ||
+             category == ProductCategories.accessory ||
              category == ProductCategories.outer ||
              category == ProductCategories.bottom,
        );
