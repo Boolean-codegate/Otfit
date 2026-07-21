@@ -70,6 +70,11 @@ CURATED = {
     "r19.png": ("레터링 아플리케 와이드 스웨트팬츠", "이와이이알", 59000, "street", "navy", "graphic", "long", "cotton"),
     "r20.png": ("체인 탭 펜던트 목걸이", "랜 아카이브", 42000, "minimal", "silver", "solid", "regular", "metal"),
     "r21.png": ("스톤 펜던트 목걸이", "세터", 39000, "casual", "silver", "solid", "regular", "metal"),
+    # 신발 (무신사, 가격은 데모 근사치)
+    "r22.png": ("벨티드 스트랩 바이커 롱부츠", "블랙 퍼플", 149000, "street", "brown", "solid", "long", "leather"),
+    "r23.png": ("사이드집 청키 첼시부츠", "커스텀에이드", 129000, "minimal", "black", "solid", "regular", "leather"),
+    "r24.png": ("벡티브 베르사 러닝화", "노스페이스", 139000, "casual", "mint", "solid", "regular", "mesh"),
+    "r25.png": ("에센셜 화이트 러닝화", "르꼬끄", 79000, "casual", "white", "solid", "regular", "mesh"),
     # 폴더 스캔 이미지 중 파일명 힌트만으로는 실물과 안 맞는 것들 (이미지 확인 후 수기 등록)
     "floral_dress.jpg": ("레드 플레어 롱 원피스", "MUSE", 89000, "romantic", "red", "solid", "long", "chiffon"),
     "top_1.png": ("버건디 라운드넥 반팔 티", "MONO", 29000, "casual", "burgundy", "solid", "regular", "cotton"),
@@ -102,6 +107,10 @@ MUSINSA_URLS = {
     "r19.png": "https://www.musinsa.com/products/5517172",  # 이와이이알
     "r20.png": "https://www.musinsa.com/products/6576023",  # 랜 아카이브
     "r21.png": "https://www.musinsa.com/products/6061062",  # 세터 목걸이
+    "r22.png": "https://www.musinsa.com/products/5629707",  # 블랙 퍼플 부츠
+    "r23.png": "https://www.musinsa.com/products/6467168",  # 커스텀에이드 부츠
+    "r24.png": "https://www.musinsa.com/products/6065956",  # 노스페이스 러닝화
+    "r25.png": "https://www.musinsa.com/products/4777376",  # 르꼬끄 운동화
 }
 
 # 파일명 힌트 사전 (영문 토큰 → 한글)
