@@ -154,8 +154,8 @@ async def seed() -> None:
             external_id = f"{category}/{filename}"
             key = f"catalog/{external_id}"
             image_url = (
-                f"{settings.s3_public_base_url.rstrip('/')}/{key}"
-                if settings.s3_public_base_url
+                f"{settings.r2_public_url.rstrip('/')}/{key}"
+                if settings.r2_public_url
                 else key  # 응답 시점 presigned 변환
             )
             fields = build_product_fields(category, filename)

@@ -27,6 +27,6 @@ def resolve_product_image_url(value: str) -> str:
     if not value or value.startswith("http://") or value.startswith("https://"):
         return value
     settings = get_settings()
-    if settings.s3_public_base_url:
-        return f"{settings.s3_public_base_url.rstrip('/')}/{value}"
+    if settings.r2_public_url:
+        return f"{settings.r2_public_url.rstrip('/')}/{value}"
     return _catalog_storage().presigned_url(value, _PRESIGN_TTL_SECONDS)

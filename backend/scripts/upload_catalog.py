@@ -62,7 +62,7 @@ def main() -> None:
             print(f"  ↑ {key}")
 
     settings = get_settings()
-    mode = "공개 URL(S3_PUBLIC_BASE_URL)" if settings.s3_public_base_url else "presigned(응답 시점 서명)"
+    mode = "공개 URL(R2_PUBLIC_URL)" if settings.r2_public_url else "presigned(응답 시점 서명)"
     print(f"\n업로드 {uploaded}건, 스킵(기존) {skipped}건 — 이미지 서빙 방식: {mode}")
     if uploaded + skipped == 0:
         print(f"⚠ 이미지가 없습니다: {IMAGES_DIR}/{{top,jacket,shirt,dress}}/ 에 넣어주세요.")

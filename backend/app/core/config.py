@@ -29,7 +29,10 @@ class Settings(BaseSettings):
     s3_secret_key: str = ""
     s3_bucket: str = ""
     s3_region: str = "auto"
-    s3_public_base_url: str = ""  # 공개 버킷 도메인 (없으면 presigned URL 사용)
+    # R2 Public Development URL (예: https://pub-xxxx.r2.dev)
+    # 설정되면 상품 이미지는 이 공개 URL로 저장/서빙, 없으면 presigned URL 사용.
+    # 사용자 사진(human_img)은 항상 presigned.
+    r2_public_url: str = ""
 
     provider_mode: str = "mock"  # mock | live (전역 기본값)
     # 컴포넌트별 오버라이드: mock | live. 비우면 provider_mode를 따른다.
