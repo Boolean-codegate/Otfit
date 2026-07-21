@@ -7,9 +7,10 @@ import '../../core/widgets/brand_logo.dart';
 import '../../models/fitting_result.dart' show ApiException;
 import '../../providers/app_providers.dart';
 
-/// 로그인/회원가입 화면 (web-login-demo 이식, MVP: 이메일만).
-/// 소셜 로그인은 MVP 범위 밖 — 백엔드 /auth/social과
-/// AuthRepository.socialLogin은 유지되어 있어 이후 UI만 붙이면 된다.
+/// 로그인/회원가입 화면 (web-login-demo 이식).
+/// 카카오/구글 버튼은 UI만 제공 (MVP는 이메일 로그인/가입만 동작).
+/// 백엔드 /auth/social과 AuthRepository.socialLogin은 준비되어 있어
+/// SDK 연동만 붙이면 소셜 로그인이 활성화된다.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -37,6 +38,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void _showError(Object error) => setState(() {
         _errorText = error is ApiException ? error.error.message : '$error';
       });
+
+  void _showComingSoon(BuildContext context, String feature) {
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(content: Text('$feature은 곧 제공될 예정이에요. 지금은 이메일로 이용해 주세요.')),
+      );
+  }
 
   Future<void> _guard(Future<void> Function() action) async {
     if (_submitting) return;
@@ -99,6 +108,43 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 28),
+                  _SocialButton(
+                    label: '카카오로 시작하기',
+                    background: const Color(0xFFFEE500),
+                    foreground: const Color(0xFF191919),
+                    icon: Icons.chat_bubble,
+                    onTap: _submitting
+                        ? null
+                        : () => _showComingSoon(context, '카카오 로그인'),
+                  ),
+                  const SizedBox(height: 10),
+                  _SocialButton(
+                    label: 'Google로 계속하기',
+                    background: Colors.white,
+                    foreground: const Color(0xFF3C4043),
+                    icon: Icons.g_mobiledata,
+                    outlined: true,
+                    onTap: _submitting
+                        ? null
+                        : () => _showComingSoon(context, '구글 로그인'),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      const Expanded(child: Divider(color: AppColors.divider)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Text(
+                          '또는 이메일로',
+                          style: textTheme.labelSmall?.copyWith(
+                            color: AppColors.disabled,
+                          ),
+                        ),
+                      ),
+                      const Expanded(child: Divider(color: AppColors.divider)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
                   if (_isJoinMode) ...[
                     _FieldLabel('닉네임'),
                     TextField(
@@ -177,6 +223,59 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SocialButton extends StatelessWidget {
+  const _SocialButton({
+    required this.label,
+    required this.background,
+    required this.foreground,
+    required this.icon,
+    required this.onTap,
+    this.outlined = false,
+  });
+
+  final String label;
+  final Color background;
+  final Color foreground;
+  final IconData icon;
+  final VoidCallback? onTap;
+  final bool outlined;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: background,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: outlined
+            ? const BorderSide(color: Color(0xFFDADCE0), width: 1.5)
+            : BorderSide.none,
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 13),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 18, color: foreground),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: foreground,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14.5,
+                ),
+              ),
+            ],
           ),
         ),
       ),

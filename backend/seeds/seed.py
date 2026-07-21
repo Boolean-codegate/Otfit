@@ -58,6 +58,12 @@ CURATED = {
     "r11.png": ("블루 버튼 브이넥 니트 톱", "OTFIT PARTNER", 39000, "romantic", "blue", "solid", "regular", "knit"),
     "r12.png": ("네이비 스냅 헨리넥 반팔 티", "OTFIT PARTNER", 27000, "casual", "navy", "solid", "regular", "cotton"),
     "r13.png": ("네이비 체크 오버 셔츠", "OTFIT PARTNER", 52000, "casual", "navy", "check", "regular", "cotton"),
+    # 폴더 스캔 이미지 중 파일명 힌트만으로는 실물과 안 맞는 것들 (이미지 확인 후 수기 등록)
+    "floral_dress.jpg": ("레드 플레어 롱 원피스", "MUSE", 89000, "romantic", "red", "solid", "long", "chiffon"),
+    "top_1.png": ("버건디 라운드넥 반팔 티", "MONO", 29000, "casual", "burgundy", "solid", "regular", "cotton"),
+    "top_2.png": ("차콜 립 반팔 티", "MONO", 27000, "minimal", "charcoal", "solid", "regular", "cotton"),
+    "dress_1.png": ("화이트 플리츠 버클 미니 원피스", "CLASSIQ", 79000, "minimal", "white", "solid", "mini", "cotton"),
+    "knit_sweater.jpg": ("크림 프린지 니트 판초", "MUSE", 55000, "romantic", "cream", "solid", "regular", "knit"),
 }
 
 # 파일명 힌트 사전 (영문 토큰 → 한글)
