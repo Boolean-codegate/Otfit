@@ -235,11 +235,17 @@ class _BeforeAfterShowcaseState extends ConsumerState<_BeforeAfterShowcase> {
               const ColoredBox(color: AppColors.surfaceMuted),
         );
 
+  /// 홈 히어로에는 공식 데모 계정(@luffy84)의 비포/애프터만 노출한다.
+  static const _showcaseAuthor = 'luffy84';
+
   @override
   Widget build(BuildContext context) {
     final posts = ref.watch(feedProvider).value ?? const <Post>[];
     final showcases = posts
-        .where((post) => post.beforeUrl != null && post.beforeUrl!.isNotEmpty)
+        .where((post) =>
+            post.author.nickname == _showcaseAuthor &&
+            post.beforeUrl != null &&
+            post.beforeUrl!.isNotEmpty)
         .take(6)
         .toList(growable: false);
 

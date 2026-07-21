@@ -3,11 +3,12 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from PIL import Image, UnidentifiedImageError
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.errors import AppError, ForbiddenError, InvalidPhotoError, NotFoundError
-from app.models import Photo, PhotoAnalysis, Report, User
+from app.models import Photo, PhotoAnalysis, Post, Report, User
 from app.providers.base import VisionAnalysis
 from app.providers.factory import get_vision_provider
 from app.providers.moderation import get_moderation_provider
@@ -160,6 +161,12 @@ class PhotoService:
         self.storage.delete(photo.storage_key)
         photo.deleted_at = datetime.now(timezone.utc)
         photo.status = "deleted"
+        # 이 사진을 비포로 쓰는 게시물에서도 제거 (깨진 이미지 + 프라이버시 정합)
+        await self.session.execute(
+            update(Post)
+            .where(Post.before_url.like(f"%{photo.storage_key}%"))
+            .values(before_url=None)
+        )
         await self.session.commit()
 
     async def analyze(self, user_id: uuid.UUID, photo_id: uuid.UUID) -> PhotoAnalysis:

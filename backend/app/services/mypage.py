@@ -72,7 +72,12 @@ class MyPageService:
                 "result_id": result.id,
                 "job_id": result.job_id,
                 "result_url": storage.url_for(result.result_storage_key),
-                "source_photo_url": storage.url_for(photo.storage_key) if photo else None,
+                # 원본 사진이 삭제됐으면 비포 제공 안 함 (깨진 이미지 방지)
+                "source_photo_url": (
+                    storage.url_for(photo.storage_key)
+                    if photo is not None and photo.deleted_at is None
+                    else None
+                ),
                 "post_id": posted.get(result.id),
                 "style_label": result.style_label,
                 "product": product,
