@@ -18,6 +18,7 @@ from app.repositories.consents import ConsentRepository
 from app.repositories.generations import GenerationRepository
 from app.repositories.photos import PhotoRepository
 from app.repositories.products import ProductRepository
+from app.services.catalog import resolve_product_image_url
 from app.services.credits import CreditService
 from app.services.recommendations import RecommendationService
 from app.storage.base import get_storage
@@ -113,7 +114,8 @@ async def _run(session: AsyncSession, job_id: uuid.UUID) -> None:
                 brand=product.brand,
                 category=product.category,
                 attributes=product.attributes,
-                image_url=product.image_url,
+                # R2 key 저장분은 presigned URL로 변환 (Segmind garm_img는 공개 접근 필요)
+                image_url=resolve_product_image_url(product.image_url),
             )
             for attempt in range(settings.generation_max_retries + 1):
                 generated = await generation.swap_garment(
