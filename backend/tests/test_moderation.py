@@ -83,6 +83,31 @@ async def test_dangerous_item_blocked_without_strike(client, monkeypatch):
     assert res.status_code == 200, res.text
 
 
+class _DisturbingProvider:
+    async def check(self, image_bytes: bytes) -> ModerationVerdict:
+        return ModerationVerdict(flagged=True, categories=["disturbing"], severe=False)
+
+
+async def test_disturbing_image_blocked_without_strike(client, monkeypatch):
+    """공포·혐오 이미지(귀신·호러 분장 등)는 DISTURBING_CONTENT로 차단 — 스트라이크 없음."""
+    monkeypatch.setattr("app.services.photos.get_moderation_provider", lambda: _DisturbingProvider())
+    headers = await _signup(client, "mod-ghost@test.dev")
+
+    res = await client.post(
+        "/photos", headers=headers,
+        files={"file": ("ghost.jpg", _image(), "image/jpeg")},
+        data={"consent_image_processing": "true"},
+    )
+    assert res.status_code == 400, res.text
+    body = res.json()["error"]
+    assert body["detail"]["reject_reason"] == "DISTURBING_CONTENT"
+    assert body["detail"]["banned"] is False
+    assert "공포감이나 혐오감" in body["message"]
+
+    res = await client.get("/me", headers=headers)
+    assert res.status_code == 200, res.text
+
+
 async def test_safe_image_upload_passes(client):
     # 기본(mock) 모더레이션은 통과 — 정상 업로드 경로 유지
     headers = await _signup(client, "mod-pass@test.dev")

@@ -63,7 +63,7 @@ class OpenAIModerationProvider:
             "요리 재료 속 식칼처럼 명백히 무해한 맥락이 아니라, 사람이 들고 있거나 "
             "부각되어 위협적으로 보이면 true.\n"
             "2) disturbing: 보는 사람에게 공포감·혐오감을 줄 수 있는가? "
-            "(호러·좀비 분장, 유혈·상처 표현, 그로테스크한 연출, 기괴하게 변형된 얼굴 등)\n"
+            "(귀신·심령사진 풍의 연출, 호러·좀비 분장, 유혈·상처 표현, 그로테스크한 연출, 기괴하게 변형된 얼굴 등)\n"
             'JSON만 출력: {"dangerous": true|false, "items": ["knife", ...], "disturbing": true|false}'
         )
         try:
