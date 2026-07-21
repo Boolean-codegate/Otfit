@@ -21,7 +21,7 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
   String? _color;
   String _sort = '인기순';
 
-  static const _categories = ['전체', '상의', '아우터', '원피스', '하의'];
+  static const _categories = ['전체', '상의', '아우터', '원피스', '하의', '액세서리'];
 
   @override
   void dispose() {

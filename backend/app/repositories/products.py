@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Product
 
-MVP_CATEGORIES = ("top", "jacket", "shirt", "dress")
+MVP_CATEGORIES = ("top", "jacket", "shirt", "dress", "pants", "accessory")
 
 
 class ProductRepository:

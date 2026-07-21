@@ -689,89 +689,132 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
             ),
           ),
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 440),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      BeforeAfterImage(
-                        afterUrl: _post.afterUrl,
-                        beforeUrl: _post.beforeUrl,
-                        borderRadius: BorderRadius.circular(16),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // 상세 액션 묶음 (이미지 아래 or 우측 컬럼에 공용)
+                final details = Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (widget.isMine && _post.beforeUrl == null) ...[
+                      OutlinedButton.icon(
+                        onPressed: _addBefore,
+                        icon: const Icon(Icons.compare_arrows_rounded,
+                            size: 16),
+                        label: const Text('비포 사진 추가'),
                       ),
-                      if (widget.isMine && _post.beforeUrl == null) ...[
-                        const SizedBox(height: 8),
-                        OutlinedButton.icon(
-                          onPressed: _addBefore,
-                          icon: const Icon(Icons.compare_arrows_rounded,
-                              size: 16),
-                          label: const Text('비포 사진 추가'),
-                        ),
-                      ],
-                      if (_post.caption.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        Text(_post.caption, style: textTheme.bodyMedium),
-                      ],
-                      if (_post.product != null) ...[
-                        const SizedBox(height: 10),
-                        OutlinedButton.icon(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            context.push('/shop/product/${_post.product!.id}');
-                          },
-                          icon: const Icon(Icons.shopping_bag_outlined),
-                          label: Text(
-                            '${_post.product!.title} · ${_post.product!.price}원',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
+                      const SizedBox(height: 10),
+                    ],
+                    if (_post.caption.isNotEmpty) ...[
+                      Text(_post.caption, style: textTheme.bodyMedium),
                       const SizedBox(height: 12),
-                      Row(
+                    ],
+                    if (_post.product != null) ...[
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          context.push('/shop/product/${_post.product!.id}');
+                        },
+                        icon: const Icon(Icons.shopping_bag_outlined),
+                        label: Text(
+                          '${_post.product!.title} · ${_post.product!.price}원',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => _vote('buy'),
+                            style: _post.myVote == 'buy'
+                                ? OutlinedButton.styleFrom(
+                                    backgroundColor: AppColors.lightPurple)
+                                : null,
+                            child: Text('살래요 👍 ${_post.buyVotes}'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => _vote('skip'),
+                            style: _post.myVote == 'skip'
+                                ? OutlinedButton.styleFrom(
+                                    backgroundColor: AppColors.lightPurple)
+                                : null,
+                            child: Text('글쎄요 🤔 ${_post.skipVotes}'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton.icon(
+                      onPressed: () => showModalBottomSheet<void>(
+                        context: context,
+                        isScrollControlled: true,
+                        builder: (_) => CommentsSheet(postId: _post.id),
+                      ),
+                      icon: const Icon(Icons.mode_comment_outlined, size: 16),
+                      label: Text(_post.commentCount == 0
+                          ? '첫 댓글을 남겨보세요'
+                          : '댓글 ${_post.commentCount}개 보기'),
+                    ),
+                  ],
+                );
+
+                final isWide = constraints.maxWidth >= 700;
+                if (isWide) {
+                  // PC: 이미지 좌 / 정보 우 — 스크롤 없이 한 화면에
+                  final imageWidth =
+                      ((constraints.maxHeight - 40) * 3 / 4).clamp(220.0, 460.0);
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                    child: Center(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () => _vote('buy'),
-                              style: _post.myVote == 'buy'
-                                  ? OutlinedButton.styleFrom(
-                                      backgroundColor: AppColors.lightPurple)
-                                  : null,
-                              child: Text('살래요 👍 ${_post.buyVotes}'),
+                          SizedBox(
+                            width: imageWidth,
+                            child: BeforeAfterImage(
+                              afterUrl: _post.afterUrl,
+                              beforeUrl: _post.beforeUrl,
+                              borderRadius: BorderRadius.circular(16),
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () => _vote('skip'),
-                              style: _post.myVote == 'skip'
-                                  ? OutlinedButton.styleFrom(
-                                      backgroundColor: AppColors.lightPurple)
-                                  : null,
-                              child: Text('글쎄요 🤔 ${_post.skipVotes}'),
-                            ),
+                          const SizedBox(width: 28),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 340),
+                            child: SingleChildScrollView(child: details),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      TextButton.icon(
-                        onPressed: () => showModalBottomSheet<void>(
-                          context: context,
-                          isScrollControlled: true,
-                          builder: (_) => CommentsSheet(postId: _post.id),
-                        ),
-                        icon: const Icon(Icons.mode_comment_outlined, size: 16),
-                        label: Text(_post.commentCount == 0
-                            ? '첫 댓글을 남겨보세요'
-                            : '댓글 ${_post.commentCount}개 보기'),
+                    ),
+                  );
+                }
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 440),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          BeforeAfterImage(
+                            afterUrl: _post.afterUrl,
+                            beforeUrl: _post.beforeUrl,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          const SizedBox(height: 12),
+                          details,
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           ),
         ],

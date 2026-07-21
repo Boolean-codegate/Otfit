@@ -15,7 +15,7 @@ from pathlib import Path
 from app.core.config import get_settings
 from app.storage.base import build_s3_storage
 
-CATEGORIES = ("top", "jacket", "shirt", "dress")
+CATEGORIES = ("top", "jacket", "shirt", "dress", "pants", "accessory")
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp"}
 IMAGES_DIR = Path(__file__).resolve().parent.parent / "seeds" / "catalog_images"
 

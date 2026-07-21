@@ -23,6 +23,8 @@ _CATEGORY_MAP = {
     "jacket": "upper_body",
     "shirt": "upper_body",
     "dress": "dresses",
+    "pants": "lower_body",
+    # accessory는 IDM-VTON 미지원 — OpenAI 생성 경로에서만 처리 가능
 }
 
 _INPUT_URL_TTL_SECONDS = 3600

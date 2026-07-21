@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 /// Wire values defined by `api_contract.md` for `GET /products`.
-/// 계약(백엔드 MVP) 카테고리: top | jacket | shirt | dress.
+/// 계약 카테고리: top | jacket | shirt | dress | pants | accessory.
 /// `outer`/`bottom`은 계약에 없는 로컬 mock 전용 레거시 값 — 서버 필터로 보내면
 /// 결과가 비므로 UI 필터에서는 사용하지 않는다.
 abstract final class ProductCategories {
@@ -9,18 +9,29 @@ abstract final class ProductCategories {
   static const String jacket = 'jacket';
   static const String shirt = 'shirt';
   static const String dress = 'dress';
+  static const String pants = 'pants';
+  static const String accessory = 'accessory';
 
   // 레거시 (mock 데이터 전용)
   static const String outer = 'outer';
   static const String bottom = 'bottom';
 
-  static const List<String> values = <String>[top, jacket, shirt, dress];
+  static const List<String> values = <String>[
+    top,
+    jacket,
+    shirt,
+    dress,
+    pants,
+    accessory,
+  ];
 
   static const List<String> allKnownValues = <String>[
     top,
     jacket,
     shirt,
     dress,
+    pants,
+    accessory,
     outer,
     bottom,
   ];
@@ -31,6 +42,8 @@ abstract final class ProductCategories {
       jacket => '재킷',
       shirt => '셔츠',
       dress => '원피스',
+      pants => '하의',
+      accessory => '액세서리',
       outer => '아우터',
       bottom => '하의',
       _ => category,
@@ -45,7 +58,8 @@ abstract final class ProductCategories {
       '재킷' || '아우터' || jacket || outer => jacket,
       '셔츠' || shirt => shirt,
       '원피스' || dress => dress,
-      '하의' || bottom => bottom,
+      '하의' || pants || bottom => pants,
+      '액세서리' || accessory => accessory,
       final value => value,
     };
   }
