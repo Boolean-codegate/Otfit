@@ -13,6 +13,8 @@ class MyFittingItem(BaseModel):
     result_id: uuid.UUID
     job_id: uuid.UUID
     result_url: str
+    # 비포(원본 업로드 사진) — 게시 시 '비포 함께 공개' 옵션에 사용
+    source_photo_url: str | None = None
     style_label: str | None
     product: ProductOut | None
     created_at: datetime

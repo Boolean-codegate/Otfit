@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/responsive_content.dart';
+import '../../models/mypage.dart';
 import '../../models/post.dart';
-import '../../models/product.dart';
 import '../../core/widgets/before_after_image.dart';
 import '../../models/social.dart';
 import '../../providers/app_providers.dart';
@@ -38,112 +38,134 @@ class UserFeedScreen extends ConsumerWidget {
     }
   }
 
-  /// 새 게시물: 상품(옷)을 골라 등록
+  /// 새 게시물: 내 피팅 결과(내 사진)만 게시할 수 있다.
+  /// 애프터 = AI 변신 결과, 비포 = 내 원본 사진(선택 공개).
   Future<void> _createPost(BuildContext context, WidgetRef ref) async {
-    final products = await ref.read(productsProvider.future);
+    final fittings = await ref.read(myFittingsProvider.future);
     if (!context.mounted) return;
-    Product? selected;
+    if (fittings.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('게시할 변신 결과가 없어요. 먼저 입혀보기로 변신해 보세요!'),
+          action: SnackBarAction(
+            label: '입혀보기',
+            onPressed: () => context.go('/try-on'),
+          ),
+        ),
+      );
+      return;
+    }
+    MyFitting selected = fittings.first;
+    var includeBefore = true;
     final captionController = TextEditingController();
     final published = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) => StatefulBuilder(
-        builder: (sheetContext, setSheetState) => Padding(
-          padding: EdgeInsets.fromLTRB(
-            20, 20, 20, 20 + MediaQuery.of(sheetContext).viewInsets.bottom,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text('새 게시물 — 옷 등록',
-                  style: Theme.of(sheetContext).textTheme.titleLarge),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 110,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: products.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 8),
-                  itemBuilder: (context, index) {
-                    final product = products[index];
-                    final isSelected = selected?.id == product.id;
-                    return GestureDetector(
-                      onTap: () => setSheetState(() => selected = product),
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 72,
-                            height: 72,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isSelected
-                                    ? AppColors.primaryPurple
-                                    : AppColors.divider,
-                                width: isSelected ? 2.5 : 1,
-                              ),
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: product.displayImage.startsWith('assets/')
-                                ? Image.asset(product.displayImage,
-                                    fit: BoxFit.cover)
-                                : Image.network(product.displayImage,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, _, _) => const Icon(
-                                        Icons.checkroom_rounded)),
-                          ),
-                          const SizedBox(height: 4),
-                          SizedBox(
-                            width: 76,
-                            child: Text(
-                              product.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                              style:
-                                  Theme.of(sheetContext).textTheme.labelSmall,
+        builder: (sheetContext, setSheetState) {
+          final hasBefore = selected.sourcePhotoUrl != null &&
+              selected.sourcePhotoUrl!.isNotEmpty;
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              20, 20, 20, 20 + MediaQuery.of(sheetContext).viewInsets.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('변신 게시하기',
+                    style: Theme.of(sheetContext).textTheme.titleLarge),
+                const SizedBox(height: 4),
+                Text(
+                  '내 피팅 결과만 게시할 수 있어요',
+                  style: Theme.of(sheetContext)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: AppColors.secondaryText),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 132,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: fittings.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      final fitting = fittings[index];
+                      final isSelected =
+                          selected.resultId == fitting.resultId;
+                      return GestureDetector(
+                        onTap: () =>
+                            setSheetState(() => selected = fitting),
+                        child: Container(
+                          width: 96,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppColors.primaryPurple
+                                  : AppColors.divider,
+                              width: isSelected ? 2.5 : 1,
                             ),
                           ),
-                        ],
-                      ),
-                    );
-                  },
+                          clipBehavior: Clip.antiAlias,
+                          child: fitting.resultUrl.startsWith('assets/')
+                              ? Image.asset(fitting.resultUrl,
+                                  fit: BoxFit.cover)
+                              : Image.network(
+                                  fitting.resultUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) => const Icon(
+                                      Icons.auto_awesome_rounded),
+                                ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: captionController,
-                maxLength: 300,
-                maxLines: 2,
-                decoration: const InputDecoration(
-                  hintText: '이 옷 어때요? 살까 말까 물어보세요 🙋',
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: includeBefore && hasBefore,
+                  onChanged: hasBefore
+                      ? (value) =>
+                          setSheetState(() => includeBefore = value)
+                      : null,
+                  title: const Text('비포 사진 함께 공개'),
+                  subtitle: Text(
+                    hasBefore
+                        ? '비포 → 애프터 변신을 보여줘요 ✨'
+                        : '이 결과에는 비포 사진이 없어요',
+                    style: Theme.of(sheetContext).textTheme.bodySmall,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              FilledButton(
-                onPressed: () {
-                  if (selected == null) {
-                    ScaffoldMessenger.of(sheetContext).showSnackBar(
-                      const SnackBar(content: Text('옷을 먼저 선택해 주세요.')),
-                    );
-                    return;
-                  }
-                  Navigator.of(sheetContext).pop(true);
-                },
-                child: const Text('게시하기'),
-              ),
-            ],
-          ),
-        ),
+                TextField(
+                  controller: captionController,
+                  maxLength: 300,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    hintText: '이 옷 어때요? 살까 말까 물어보세요 🙋',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                FilledButton(
+                  onPressed: () => Navigator.of(sheetContext).pop(true),
+                  child: const Text('게시하기'),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
-    if (published != true || selected == null || !context.mounted) return;
+    if (published != true || !context.mounted) return;
     try {
       await ref.read(postRepositoryProvider).createPost(
-            productId: selected!.id,
+            resultId: selected.resultId,
+            productId: selected.product?.id,
             caption: captionController.text.trim(),
-            afterUrl: selected!.imageUrl,
+            afterUrl: selected.resultUrl,
+            beforeUrl: includeBefore ? selected.sourcePhotoUrl : null,
           );
       ref.invalidate(userPostsProvider(userId));
       ref.invalidate(userProfileProvider(userId));
@@ -474,15 +496,13 @@ class _ProfileHeader extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 14),
-            // OTFIT 아이덴티티: '변신 N회'가 첫 번째
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
                 _StatChip(
-                  emoji: '✨',
-                  label: '변신 ${profile.postCount}회',
-                  emphasized: true,
+                  emoji: '📸',
+                  label: '게시물 ${profile.postCount}개',
                 ),
                 _StatChip(
                   emoji: '💜',
@@ -508,18 +528,16 @@ class _StatChip extends StatelessWidget {
     required this.emoji,
     required this.label,
     this.onTap,
-    this.emphasized = false,
   });
 
   final String emoji;
   final String label;
   final VoidCallback? onTap;
-  final bool emphasized;
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: emphasized ? AppColors.primaryPurple : AppColors.surface,
+      color: AppColors.surface,
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         onTap: onTap,
@@ -528,10 +546,10 @@ class _StatChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
           child: Text(
             '$emoji $label',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w800,
-              color: emphasized ? Colors.white : AppColors.mainText,
+              color: AppColors.mainText,
             ),
           ),
         ),

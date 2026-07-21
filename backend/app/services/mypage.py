@@ -18,9 +18,10 @@ class MyPageService:
     async def fittings(self, user_id: uuid.UUID, limit: int, offset: int) -> dict:
         """품질 통과 결과만, 최신순 (QUALITY_GATE_ENFORCE=false면 전부)."""
         stmt = (
-            select(GenerationResult, Product)
+            select(GenerationResult, Product, Photo)
             .join(GenerationJob, GenerationResult.job_id == GenerationJob.id)
             .outerjoin(Product, GenerationResult.product_id == Product.id)
+            .outerjoin(Photo, GenerationJob.photo_id == Photo.id)
             .where(GenerationJob.user_id == user_id)
             .order_by(GenerationResult.created_at.desc())
             .limit(limit)
@@ -38,11 +39,12 @@ class MyPageService:
                 "result_id": result.id,
                 "job_id": result.job_id,
                 "result_url": storage.url_for(result.result_storage_key),
+                "source_photo_url": storage.url_for(photo.storage_key) if photo else None,
                 "style_label": result.style_label,
                 "product": product,
                 "created_at": result.created_at,
             }
-            for result, product in rows
+            for result, product, photo in rows
         ]
         return {"items": items, "next_cursor": str(offset + limit) if len(rows) == limit else None}
 
