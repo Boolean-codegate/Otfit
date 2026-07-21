@@ -27,6 +27,10 @@ class StorageService(ABC):
     def presigned_url(self, key: str, expires_seconds: int = 3600) -> str:
         """외부 서비스가 직접 가져갈 수 있는 임시(또는 공개) URL."""
 
+    def download_url(self, key: str, filename: str) -> str:
+        """브라우저가 바로 저장(다운로드)하게 만드는 URL — 기본은 일반 URL."""
+        return self.url_for(key)
+
     @abstractmethod
     def exists(self, key: str) -> bool: ...
 
@@ -132,6 +136,19 @@ class S3Storage(StorageService):
             "get_object",
             Params={"Bucket": self.bucket, "Key": key},
             ExpiresIn=expires_seconds,
+        )
+
+    def download_url(self, key: str, filename: str) -> str:
+        """Content-Disposition: attachment를 실은 presigned URL —
+        브라우저가 열지 않고 바로 저장한다 (모바일=다운로드/갤러리, PC=다운로드 폴더)."""
+        return self.client.generate_presigned_url(
+            "get_object",
+            Params={
+                "Bucket": self.bucket,
+                "Key": key,
+                "ResponseContentDisposition": f'attachment; filename="{filename}"',
+            },
+            ExpiresIn=3600,
         )
 
     def exists(self, key: str) -> bool:

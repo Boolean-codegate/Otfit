@@ -83,4 +83,6 @@ class ExportService:
         key = f"exports/{user_id}/{result_id}_{safe_ratio}_{'hi' if allow_hi_res else 'std'}.jpg"
         self.storage.save(key, buf.getvalue())
 
-        return {"export_url": self.storage.url_for(key), "watermark": watermark}
+        # attachment URL — 브라우저가 바로 저장 (모바일=갤러리/다운로드, PC=다운로드 폴더)
+        filename = f"OTFIT_{str(result_id)[:8]}.jpg"
+        return {"export_url": self.storage.download_url(key, filename), "watermark": watermark}
