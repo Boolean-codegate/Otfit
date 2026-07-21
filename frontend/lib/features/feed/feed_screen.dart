@@ -231,7 +231,6 @@ class _PostCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
-    final product = post.product;
 
     return Material(
       color: AppColors.surface,
@@ -293,12 +292,12 @@ class _PostCard extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
               child: Text(post.caption, style: textTheme.bodyMedium),
             ),
-          // 연결 상품
-          if (product != null)
+          // 연결 상품 — 멀티 피팅이면 착용 아이템 전부 나열
+          for (final item in post.products)
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
               child: InkWell(
-                onTap: () => context.go('/shop/product/${product.id}'),
+                onTap: () => context.go('/shop/product/${item.id}'),
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
                   padding: const EdgeInsets.all(10),
@@ -313,13 +312,13 @@ class _PostCard extends ConsumerWidget {
                         child: SizedBox(
                           width: 40,
                           height: 40,
-                          child: product.displayImage.startsWith('assets/')
+                          child: item.displayImage.startsWith('assets/')
                               ? Image.asset(
-                                  product.displayImage,
+                                  item.displayImage,
                                   fit: BoxFit.cover,
                                 )
                               : Image.network(
-                                  product.displayImage,
+                                  item.displayImage,
                                   fit: BoxFit.cover,
                                   errorBuilder: (_, _, _) => const Icon(
                                     Icons.checkroom_rounded,
@@ -333,13 +332,13 @@ class _PostCard extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              product.title,
+                              item.title,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: textTheme.labelLarge,
                             ),
                             Text(
-                              '${product.price}원',
+                              '${item.categoryLabel} · ${item.price}원',
                               style: textTheme.labelMedium?.copyWith(
                                 color: AppColors.primaryPurple,
                                 fontWeight: FontWeight.w800,

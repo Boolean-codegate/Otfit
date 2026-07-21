@@ -18,7 +18,7 @@ class MyPageService:
     async def fittings(self, user_id: uuid.UUID, limit: int, offset: int) -> dict:
         """품질 통과 결과만, 최신순 (QUALITY_GATE_ENFORCE=false면 전부)."""
         stmt = (
-            select(GenerationResult, Product, Photo)
+            select(GenerationResult, Product, Photo, GenerationJob)
             .join(GenerationJob, GenerationResult.job_id == GenerationJob.id)
             .outerjoin(Product, GenerationResult.product_id == Product.id)
             .outerjoin(Photo, GenerationJob.photo_id == Photo.id)
@@ -34,7 +34,7 @@ class MyPageService:
             )
         rows = (await self.session.execute(stmt)).all()
         # 이미 피드에 게시한 결과면 post_id를 함께 내려준다 ('피드 보러 가기' 분기)
-        result_ids = [result.id for result, _, _ in rows]
+        result_ids = [result.id for result, _, _, _ in rows]
         posted: dict[uuid.UUID, uuid.UUID] = {}
         if result_ids:
             post_rows = await self.session.execute(
@@ -43,6 +43,29 @@ class MyPageService:
                 .order_by(Post.created_at)
             )
             posted = dict(post_rows.all())
+        # 멀티 아이템 피팅: job.options.product_ids의 상품 전체를 함께 내려준다
+        multi_ids: set[uuid.UUID] = set()
+        for _, _, _, job in rows:
+            for pid in (job.options or {}).get("product_ids") or []:
+                multi_ids.add(uuid.UUID(pid))
+        products_map: dict[uuid.UUID, Product] = {}
+        if multi_ids:
+            products_map = {
+                p.id: p
+                for p in (
+                    await self.session.execute(
+                        select(Product).where(Product.id.in_(multi_ids))
+                    )
+                ).scalars()
+            }
+
+        def _items_for(job: GenerationJob, primary: Product | None) -> list[Product]:
+            ids = [uuid.UUID(pid) for pid in (job.options or {}).get("product_ids") or []]
+            loaded = [products_map[i] for i in ids if i in products_map]
+            if loaded:
+                return loaded
+            return [primary] if primary else []
+
         storage = get_storage()
         items = [
             {
@@ -53,9 +76,10 @@ class MyPageService:
                 "post_id": posted.get(result.id),
                 "style_label": result.style_label,
                 "product": product,
+                "products": _items_for(job, product),
                 "created_at": result.created_at,
             }
-            for result, product, photo in rows
+            for result, product, photo, job in rows
         ]
         return {"items": items, "next_cursor": str(offset + limit) if len(rows) == limit else None}
 

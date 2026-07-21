@@ -194,7 +194,17 @@ class _FittingDetailScreenState extends ConsumerState<FittingDetailScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                if (product != null)
+                if (fitting.products.length > 1)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      '착용한 아이템 ${fitting.products.length}개',
+                      style: textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                for (final (index, item) in fitting.products.indexed) ...[
+                  if (index > 0) const SizedBox(height: 8),
                   Material(
                     color: AppColors.surface,
                     shape: RoundedRectangleBorder(
@@ -203,7 +213,7 @@ class _FittingDetailScreenState extends ConsumerState<FittingDetailScreen> {
                     ),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(16),
-                      onTap: () => context.push('/shop/product/${product.id}'),
+                      onTap: () => context.push('/shop/product/${item.id}'),
                       child: Padding(
                         padding: const EdgeInsets.all(12),
                         child: Row(
@@ -212,8 +222,8 @@ class _FittingDetailScreenState extends ConsumerState<FittingDetailScreen> {
                               width: 64,
                               height: 64,
                               child: ProductImage(
-                                assetPath: product.displayImage,
-                                semanticLabel: product.title,
+                                assetPath: item.displayImage,
+                                semanticLabel: item.title,
                                 borderRadius: const BorderRadius.all(
                                   Radius.circular(10),
                                 ),
@@ -225,20 +235,20 @@ class _FittingDetailScreenState extends ConsumerState<FittingDetailScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    product.brand,
+                                    '${item.brand} · ${item.categoryLabel}',
                                     style: textTheme.labelSmall?.copyWith(
                                       color: AppColors.primaryPurple,
                                       fontWeight: FontWeight.w800,
                                     ),
                                   ),
                                   Text(
-                                    product.title,
+                                    item.title,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: textTheme.titleSmall,
                                   ),
                                   const SizedBox(height: 2),
-                                  PriceText(price: product.price),
+                                  PriceText(price: item.price),
                                 ],
                               ),
                             ),
@@ -249,6 +259,7 @@ class _FittingDetailScreenState extends ConsumerState<FittingDetailScreen> {
                       ),
                     ),
                   ),
+                ],
                 const SizedBox(height: 18),
                 Row(
                   children: [

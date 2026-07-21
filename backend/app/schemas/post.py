@@ -47,6 +47,8 @@ class PostOut(ORMModel):
     before_url: str | None
     after_url: str
     product: ProductOut | None
+    # 착용 아이템 전체 (멀티 피팅 게시물) — product는 대표(첫) 아이템
+    products: list[ProductOut] = []
     buy_votes: int
     skip_votes: int
     my_vote: Literal["buy", "skip"] | None = None

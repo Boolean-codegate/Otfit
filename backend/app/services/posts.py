@@ -114,10 +114,12 @@ class PostService:
             }
         my_votes = await self.posts.votes_for_posts([p.id for p in posts], user.id)
         comment_counts = await self._comment_counts([p.id for p in posts])
+        multi = await self._products_for_results([p.result_id for p in posts if p.result_id])
         return [
             self._build_out(
                 p, authors.get(p.user_id), products.get(p.product_id), my_votes.get(p.id),
                 comment_count=comment_counts.get(p.id, 0),
+                products=multi.get(p.result_id) if p.result_id else None,
             )
             for p in posts
         ]
@@ -154,6 +156,39 @@ class PostService:
         return list(result.scalars().all())
 
     # ── 내부 ──────────────────────────────────────────────
+    async def _products_for_results(
+        self, result_ids: list[uuid.UUID]
+    ) -> dict[uuid.UUID, list[Product]]:
+        """게시물에 연결된 생성 결과 → 그 잡의 착용 아이템 전체 (멀티 피팅)."""
+        if not result_ids:
+            return {}
+        rows = (
+            await self.session.execute(
+                select(GenerationResult.id, GenerationJob.options)
+                .join(GenerationJob, GenerationResult.job_id == GenerationJob.id)
+                .where(GenerationResult.id.in_(result_ids))
+            )
+        ).all()
+        wanted: set[uuid.UUID] = set()
+        per_result: dict[uuid.UUID, list[uuid.UUID]] = {}
+        for result_id, options in rows:
+            ids = [uuid.UUID(pid) for pid in (options or {}).get("product_ids") or []]
+            per_result[result_id] = ids
+            wanted.update(ids)
+        if not wanted:
+            return {}
+        products = {
+            p.id: p
+            for p in (
+                await self.session.execute(select(Product).where(Product.id.in_(wanted)))
+            ).scalars()
+        }
+        return {
+            rid: [products[i] for i in ids if i in products]
+            for rid, ids in per_result.items()
+            if ids
+        }
+
     @staticmethod
     def _bump(post: Post, choice: str, delta: int) -> None:
         if choice == "buy":
@@ -166,15 +201,19 @@ class PostService:
         product = await self.session.get(Product, post.product_id) if post.product_id else None
         vote = await self.posts.get_vote(post.id, viewer_id)
         counts = await self._comment_counts([post.id])
+        multi = (
+            await self._products_for_results([post.result_id]) if post.result_id else {}
+        )
         return self._build_out(
             post, author, product, vote.choice if vote else None,
             comment_count=counts.get(post.id, 0),
+            products=multi.get(post.result_id),
         )
 
     @staticmethod
     def _build_out(
         post: Post, author: User | None, product: Product | None, my_vote: str | None,
-        comment_count: int = 0,
+        comment_count: int = 0, products: list[Product] | None = None,
     ) -> PostOut:
         return PostOut.model_validate(
             {
@@ -184,6 +223,7 @@ class PostService:
                 "before_url": post.before_url,
                 "after_url": post.after_url,
                 "product": product,
+                "products": products or ([product] if product else []),
                 "buy_votes": post.buy_votes,
                 "skip_votes": post.skip_votes,
                 "my_vote": my_vote,

@@ -19,6 +19,8 @@ class MyFittingItem(BaseModel):
     post_id: uuid.UUID | None = None
     style_label: str | None
     product: ProductOut | None
+    # 착용 아이템 전체 (옷/하의/액세서리, 1~3개) — product는 첫 항목(대표)
+    products: list[ProductOut] = []
     created_at: datetime
 
 

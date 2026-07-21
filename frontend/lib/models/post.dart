@@ -25,12 +25,14 @@ class Post {
     this.beforeUrl,
     required this.afterUrl,
     this.product,
+    List<Product> products = const [],
     required this.buyVotes,
     required this.skipVotes,
     this.myVote,
     this.commentCount = 0,
     required this.createdAt,
-  });
+    // ignore: prefer_initializing_formals
+  }) : _products = products;
 
   final String id;
   final PostAuthor author;
@@ -38,11 +40,16 @@ class Post {
   final String? beforeUrl;
   final String afterUrl;
   final Product? product;
+  final List<Product> _products;
   final int buyVotes;
   final int skipVotes;
   final String? myVote; // buy | skip | null
   final int commentCount;
   final DateTime createdAt;
+
+  /// 착용 아이템 전체 (멀티 피팅 게시물) — 서버 미지원/단일이면 [product]
+  List<Product> get products =>
+      _products.isNotEmpty ? _products : [?product];
 
   factory Post.fromJson(Map<String, dynamic> json) => Post(
         id: (json['id'] ?? '').toString(),
@@ -55,6 +62,13 @@ class Post {
         product: json['product'] is Map
             ? Product.fromJson(Map<String, dynamic>.from(json['product'] as Map))
             : null,
+        products: json['products'] is List
+            ? (json['products'] as List)
+                .whereType<Map>()
+                .map((item) =>
+                    Product.fromJson(Map<String, dynamic>.from(item)))
+                .toList(growable: false)
+            : const [],
         buyVotes: (json['buy_votes'] as num?)?.toInt() ?? 0,
         skipVotes: (json['skip_votes'] as num?)?.toInt() ?? 0,
         myVote: json['my_vote']?.toString(),
@@ -79,6 +93,7 @@ class Post {
       beforeUrl: beforeUrl ?? this.beforeUrl,
       afterUrl: afterUrl,
       product: product,
+      products: _products,
       buyVotes: buyVotes ?? this.buyVotes,
       skipVotes: skipVotes ?? this.skipVotes,
       myVote: identical(myVote, _unset) ? this.myVote : myVote as String?,

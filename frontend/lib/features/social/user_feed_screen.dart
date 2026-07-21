@@ -709,21 +709,22 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                       Text(_post.caption, style: textTheme.bodyMedium),
                       const SizedBox(height: 12),
                     ],
-                    if (_post.product != null) ...[
+                    for (final item in _post.products) ...[
                       OutlinedButton.icon(
                         onPressed: () {
                           Navigator.of(context).pop();
-                          context.push('/shop/product/${_post.product!.id}');
+                          context.push('/shop/product/${item.id}');
                         },
                         icon: const Icon(Icons.shopping_bag_outlined),
                         label: Text(
-                          '${_post.product!.title} · ${_post.product!.price}원',
+                          '${item.title} · ${item.price}원',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
                     ],
+                    if (_post.products.isNotEmpty) const SizedBox(height: 4),
                     Row(
                       children: [
                         Expanded(

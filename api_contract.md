@@ -197,6 +197,7 @@ res 200:
   "caption": "여름 바다 갈 때 이거 어때요? 🌊",
   "before_url": null, "after_url": "https://…/result.png",
   "product": {Product} | null,
+  "products": [{Product}],   // 착용 아이템 전체 (멀티 피팅, product = 첫 항목)
   "buy_votes": 14, "skip_votes": 3,
   "my_vote": "buy" | "skip" | null,
   "comment_count": 5,
@@ -235,7 +236,9 @@ res 200:
 { "items": [
     { "result_id": "res_1", "job_id": "job_1", "result_url": "https://…",
       "source_photo_url": "https://…" | null, "post_id": "po_1" | null,
-      "style_label": "casual", "product": {Product} | null, "created_at": "…" }
+      "style_label": "casual", "product": {Product} | null,
+      "products": [{Product}],  // 착용 아이템 전체 (멀티 피팅)
+      "created_at": "…" }
   ], "next_cursor": null }
 ```
 

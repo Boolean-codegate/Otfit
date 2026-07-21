@@ -13,8 +13,10 @@ class MyFitting {
     this.postId,
     this.styleLabel,
     this.product,
+    List<Product> products = const [],
     required this.createdAt,
-  });
+    // ignore: prefer_initializing_formals
+  }) : _products = products;
 
   final String resultId;
   final String jobId;
@@ -27,7 +29,12 @@ class MyFitting {
   final String? postId;
   final String? styleLabel;
   final Product? product;
+  final List<Product> _products;
   final DateTime createdAt;
+
+  /// 착용 아이템 전체 (옷/하의/액세서리) — 서버 미지원/단일이면 [product]
+  List<Product> get products =>
+      _products.isNotEmpty ? _products : [?product];
 
   factory MyFitting.fromJson(Map<String, dynamic> json) => MyFitting(
         resultId: (json['result_id'] ?? '').toString(),
@@ -39,6 +46,13 @@ class MyFitting {
         product: json['product'] is Map
             ? Product.fromJson(Map<String, dynamic>.from(json['product'] as Map))
             : null,
+        products: json['products'] is List
+            ? (json['products'] as List)
+                .whereType<Map>()
+                .map((item) =>
+                    Product.fromJson(Map<String, dynamic>.from(item)))
+                .toList(growable: false)
+            : const [],
         createdAt:
             DateTime.tryParse(json['created_at']?.toString() ?? '')?.toUtc() ??
                 DateTime.now().toUtc(),
