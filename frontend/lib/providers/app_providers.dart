@@ -4,28 +4,78 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/config/app_config.dart';
+import '../core/network/api_client.dart';
+import '../core/network/token_storage.dart';
 import '../mock/mock_products.dart';
 import '../models/fitting_result.dart';
 import '../models/product.dart';
+import '../repositories/auth_repository.dart';
+import '../repositories/consent_repository.dart';
+import '../repositories/credit_repository.dart';
+import '../repositories/http/http_product_repository.dart';
+import '../repositories/http/http_try_on_repository.dart';
 import '../repositories/product_repository.dart';
+import '../repositories/shop_repository.dart';
 import '../repositories/try_on_repository.dart';
 
 export '../models/fitting_result.dart' show SelectedUserPhoto;
 
+/// 백엔드 MVP 카테고리(top/jacket/shirt/dress) 기준 필터.
 const List<String> productCategoryFilters = <String>[
   '전체',
   '상의',
-  '아우터',
+  '재킷',
+  '셔츠',
   '원피스',
-  '하의',
 ];
 
+/// mock:// 이 아니면 실 백엔드로 붙는 공용 API 클라이언트.
+final apiClientProvider = Provider<ApiClient>((ref) {
+  return ApiClient(
+    baseUrl: AppConfig.apiBaseUrl,
+    tokens: SecureTokenStorage(),
+  );
+});
+
+final authRepositoryProvider = Provider<AuthRepository>((ref) {
+  return AppConfig.usesMockApi
+      ? MockAuthRepository()
+      : HttpAuthRepository(ref.watch(apiClientProvider));
+});
+
+final consentRepositoryProvider = Provider<ConsentRepository>((ref) {
+  return AppConfig.usesMockApi
+      ? MockConsentRepository()
+      : HttpConsentRepository(ref.watch(apiClientProvider));
+});
+
+final shopRepositoryProvider = Provider<ShopRepository>((ref) {
+  return AppConfig.usesMockApi
+      ? MockShopRepository()
+      : HttpShopRepository(ref.watch(apiClientProvider));
+});
+
+final creditRepositoryProvider = Provider<CreditRepository>((ref) {
+  return AppConfig.usesMockApi
+      ? MockCreditRepository()
+      : HttpCreditRepository(ref.watch(apiClientProvider));
+});
+
 final productRepositoryProvider = Provider<ProductRepository>((ref) {
-  return MockProductRepository();
+  return AppConfig.usesMockApi
+      ? MockProductRepository()
+      : HttpProductRepository(ref.watch(apiClientProvider));
 });
 
 final tryOnRepositoryProvider = Provider<TryOnRepository>((ref) {
-  return MockTryOnRepository();
+  return AppConfig.usesMockApi
+      ? MockTryOnRepository()
+      : HttpTryOnRepository(ref.watch(apiClientProvider));
+});
+
+/// 현재 세션 사용자 (HTTP 모드: GET /me, mock: 고정 유저).
+final currentUserProvider = FutureProvider<User>((ref) {
+  return ref.watch(authRepositoryProvider).me();
 });
 
 final productsProvider = FutureProvider<List<Product>>((ref) {

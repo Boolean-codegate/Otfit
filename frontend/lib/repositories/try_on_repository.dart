@@ -1,5 +1,7 @@
 import '../mock/mock_products.dart';
 import '../models/fitting_result.dart';
+import '../models/product.dart';
+import '../models/recommendation.dart';
 
 abstract final class GenerationModes {
   static const String direct = 'A_direct';
@@ -27,6 +29,13 @@ abstract class TryOnRepository {
 
   /// Mirrors DELETE /photos/{id}.
   Future<void> deletePhoto(String photoId);
+
+  /// Mirrors POST /photos/{id}/recommendations.
+  Future<RecommendationResponse> getRecommendations({
+    required String photoId,
+    required String mode,
+    String? styleId,
+  });
 
   /// Mirrors POST /generations.
   Future<GenerationJob> createGeneration({
@@ -131,6 +140,43 @@ class MockTryOnRepository extends TryOnRepository {
   Future<void> deletePhoto(String photoId) async {
     await _wait();
     _photos.remove(photoId);
+  }
+
+  @override
+  Future<RecommendationResponse> getRecommendations({
+    required String photoId,
+    required String mode,
+    String? styleId,
+  }) async {
+    await _wait();
+    _requirePhoto(photoId);
+    if (mode != GenerationModes.stylist) {
+      return RecommendationResponse(
+        photoId: photoId,
+        mode: mode,
+        products: mockProducts.take(12).toList(growable: false),
+      );
+    }
+    const suggestions = <({String id, String label, String category})>[
+      (id: 'st_1', label: '미니멀 데일리룩', category: ProductCategories.top),
+      (id: 'st_2', label: '모던 시티룩', category: ProductCategories.jacket),
+    ];
+    return RecommendationResponse(
+      photoId: photoId,
+      mode: mode,
+      groups: <RecommendationGroup>[
+        for (final suggestion in suggestions)
+          if (styleId == null || styleId == suggestion.id)
+            RecommendationGroup(
+              styleId: suggestion.id,
+              label: suggestion.label,
+              products: mockProducts
+                  .where((product) => product.category == suggestion.category)
+                  .take(4)
+                  .toList(growable: false),
+            ),
+      ],
+    );
   }
 
   @override
