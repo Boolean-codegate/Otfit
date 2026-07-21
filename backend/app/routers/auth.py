@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Response, status
 
 from app.core.deps import CurrentUser, DbSession
 from app.schemas.auth import (
@@ -6,6 +6,7 @@ from app.schemas.auth import (
     LoginRequest,
     RefreshRequest,
     RegisterRequest,
+    SocialLoginRequest,
     TokenPair,
     UserOut,
 )
@@ -25,6 +26,17 @@ async def register(body: RegisterRequest, session: DbSession):
 @router.post("/auth/login", response_model=AuthResponse)
 async def login(body: LoginRequest, session: DbSession):
     user, tokens = await AuthService(session).login(email=body.email, password=body.password)
+    return {"user": user, **tokens}
+
+
+@router.post("/auth/social", response_model=AuthResponse)
+async def social_login(body: SocialLoginRequest, session: DbSession, response: Response):
+    """카카오/구글 SDK 토큰으로 로그인. 미가입 사용자는 자동 가입(201)."""
+    user, tokens, is_new = await AuthService(session).social_login(
+        provider=body.provider, token=body.token
+    )
+    if is_new:
+        response.status_code = status.HTTP_201_CREATED
     return {"user": user, **tokens}
 
 
