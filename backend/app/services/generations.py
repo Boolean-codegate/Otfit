@@ -29,6 +29,7 @@ class GenerationService:
         mode: str,
         product_id: uuid.UUID | None,
         options: dict,
+        product_ids: list[uuid.UUID] | None = None,
     ) -> GenerationJob:
         photo = await self.photos.get(photo_id)
         if photo is None or photo.deleted_at is not None:
@@ -46,7 +47,21 @@ class GenerationService:
                 "이 사진은 생성 범위 밖입니다.", detail={"reject_reason": analysis.reject_reason}
             )
 
-        if mode in MODES_REQUIRING_PRODUCT:
+        # 멀티 아이템(옷/하의/액세서리 조합)은 A_direct 전용 — 첫 항목이 대표 상품
+        if product_ids:
+            if mode != "A_direct":
+                raise AppError("product_ids는 A_direct 모드에서만 사용합니다.", code="VALIDATION_ERROR", status_code=422)
+            if len(product_ids) > 3:
+                raise AppError("한 번에 최대 3개까지 입어볼 수 있어요.", code="VALIDATION_ERROR", status_code=422)
+            for pid in product_ids:
+                item = await self.products.get(pid)
+                if item is None:
+                    raise NotFoundError("상품을 찾을 수 없습니다.")
+                if item.stock_status == "out_of_stock":
+                    raise AppError("품절 상품으로는 생성할 수 없습니다.", code="VALIDATION_ERROR", status_code=422)
+            product_id = product_ids[0]
+            options = {**options, "product_ids": [str(pid) for pid in product_ids]}
+        elif mode in MODES_REQUIRING_PRODUCT:
             if product_id is None:
                 raise AppError(f"{mode} 모드는 product_id가 필요합니다.", code="VALIDATION_ERROR", status_code=422)
             product = await self.products.get(product_id)

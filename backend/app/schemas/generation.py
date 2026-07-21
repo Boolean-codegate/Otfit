@@ -16,6 +16,9 @@ class GenerationCreateRequest(BaseModel):
     photo_id: uuid.UUID
     mode: GenerationMode
     product_id: uuid.UUID | None = None  # A_direct / C_similar / D_variation 기준 상품
+    # 멀티 아이템 피팅 (A_direct 전용): 옷/하의/액세서리 조합, 1~3개.
+    # 지정 시 product_id는 무시되고 첫 항목이 대표 상품이 된다.
+    product_ids: list[uuid.UUID] | None = None
     options: GenerationOptions = GenerationOptions()
 
 

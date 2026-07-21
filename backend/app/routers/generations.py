@@ -20,7 +20,8 @@ router = APIRouter(tags=["generations"])
 @router.post("/generations", response_model=GenerationCreateResponse, status_code=status.HTTP_202_ACCEPTED)
 async def create_generation(body: GenerationCreateRequest, user: CurrentUser, session: DbSession):
     job = await GenerationService(session).create_job(
-        user.id, body.photo_id, body.mode, body.product_id, body.options.model_dump()
+        user.id, body.photo_id, body.mode, body.product_id, body.options.model_dump(),
+        product_ids=body.product_ids,
     )
     return {"job_id": job.id, "status": job.status, "credits_charged": job.credits_charged}
 

@@ -72,3 +72,23 @@ class GenerationProvider(ABC):
         variation_seed: int = 0,
     ) -> bytes:
         """얼굴·체형·배경을 유지한 채 의상만 교체한 이미지를 반환한다."""
+
+    async def swap_garments(
+        self,
+        photo_bytes: bytes,
+        garments: list[GarmentSpec],
+        analysis: VisionAnalysis,
+        style: str | None = None,
+        variation_seed: int = 0,
+    ) -> bytes:
+        """멀티 아이템(옷/하의/액세서리 조합) 피팅.
+
+        기본 구현은 아이템별 순차 적용(체이닝) — 앞 아이템의 결과 위에 다음 아이템을
+        입힌다. 한 번의 호출로 처리 가능한 프로바이더(OpenAI)는 오버라이드한다.
+        """
+        result = photo_bytes
+        for garment in garments:
+            result = await self.swap_garment(
+                result, garment, analysis, style=style, variation_seed=variation_seed
+            )
+        return result

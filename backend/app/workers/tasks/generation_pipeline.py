@@ -110,19 +110,25 @@ async def _run(session: AsyncSession, job_id: uuid.UUID) -> None:
         # QUALITY_GATE_ENFORCE=false면 게이트는 '기록만' — 첫 결과를 무조건 저장한다
         enforce_gate = settings.quality_gate_enforce
         max_attempts = settings.generation_max_retries + 1 if enforce_gate else 1
-        for index, (product, style_label, base_seed) in enumerate(candidates):
-            garment = GarmentSpec(
-                product_id=str(product.id),
-                title=product.title,
-                brand=product.brand,
-                category=product.category,
-                attributes=product.attributes,
+        def _to_spec(item: Product) -> GarmentSpec:
+            return GarmentSpec(
+                product_id=str(item.id),
+                title=item.title,
+                brand=item.brand,
+                category=item.category,
+                attributes=item.attributes,
                 # R2 key 저장분은 presigned URL로 변환 (Segmind garm_img는 공개 접근 필요)
-                image_url=resolve_product_image_url(product.image_url),
+                image_url=resolve_product_image_url(item.image_url),
             )
+
+        # 멀티 아이템 피팅 (A_direct): options.product_ids의 옷/하의/액세서리를 한 번에
+        multi_products = await _load_multi_products(session, job)
+
+        for index, (product, style_label, base_seed) in enumerate(candidates):
+            garments = [_to_spec(p) for p in (multi_products or [product])]
             for attempt in range(max_attempts):
-                generated = await generation.swap_garment(
-                    photo_bytes, garment, vision, style=style_label, variation_seed=base_seed + attempt
+                generated = await generation.swap_garments(
+                    photo_bytes, garments, vision, style=style_label, variation_seed=base_seed + attempt
                 )
                 report = await vision_provider.assess_quality(photo_bytes, generated)
                 passed = report.identity_preserved and report.quality_score >= settings.quality_score_threshold
@@ -215,6 +221,19 @@ def _to_vision(analysis: PhotoAnalysis) -> VisionAnalysis:
         is_valid=analysis.is_valid,
         reject_reason=analysis.reject_reason,
     )
+
+
+async def _load_multi_products(
+    session: AsyncSession, job: GenerationJob
+) -> list[Product] | None:
+    """A_direct 멀티 아이템: options.product_ids 순서대로 상품 로드 (없으면 None)."""
+    ids = list((job.options or {}).get("product_ids") or [])
+    if job.mode != "A_direct" or len(ids) < 2:
+        return None
+    products = ProductRepository(session)
+    loaded = [await products.get(uuid.UUID(pid)) for pid in ids]
+    result = [p for p in loaded if p is not None]
+    return result or None
 
 
 async def _pick_candidates(

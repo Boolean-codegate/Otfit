@@ -392,6 +392,46 @@ class SelectedUserPhotoController extends Notifier<SelectedUserPhoto?> {
   }
 }
 
+/// 멀티 아이템 피팅 슬롯 — 옷(상의/원피스류)/하의/액세서리 각 1개, 조합 자유.
+final outfitProvider = NotifierProvider<OutfitController, Map<String, Product?>>(
+  OutfitController.new,
+);
+
+class OutfitController extends Notifier<Map<String, Product?>> {
+  static const slotClothes = 'clothes';
+  static const slotPants = 'pants';
+  static const slotAccessory = 'accessory';
+  static const slots = [slotClothes, slotPants, slotAccessory];
+
+  @override
+  Map<String, Product?> build() =>
+      const {slotClothes: null, slotPants: null, slotAccessory: null};
+
+  static String slotFor(Product product) => switch (product.category) {
+        ProductCategories.pants || ProductCategories.bottom =>
+          slotPants,
+        ProductCategories.accessory => slotAccessory,
+        _ => slotClothes,
+      };
+
+  void select(Product product) =>
+      state = {...state, slotFor(product): product};
+
+  void clearSlot(String slot) => state = {...state, slot: null};
+
+  void reset() =>
+      state = const {slotClothes: null, slotPants: null, slotAccessory: null};
+}
+
+/// 슬롯에 담긴 아이템 목록 (옷 → 하의 → 액세서리 순; 첫 항목이 대표 상품)
+final outfitItemsProvider = Provider<List<Product>>((ref) {
+  final outfit = ref.watch(outfitProvider);
+  return [
+    for (final slot in OutfitController.slots)
+      if (outfit[slot] != null) outfit[slot]!,
+  ];
+});
+
 final selectedProductProvider =
     NotifierProvider<SelectedProductController, Product?>(
       SelectedProductController.new,
@@ -688,17 +728,23 @@ class TryOnController extends Notifier<TryOnProcessState> {
     if (state.isLoading) return null;
 
     final photo = ref.read(selectedUserPhotoProvider);
-    final product = ref.read(selectedProductProvider);
+    // 슬롯(옷/하의/액세서리) 우선, 비어 있으면 단일 선택 상품 폴백
+    var items = ref.read(outfitItemsProvider);
+    if (items.isEmpty) {
+      final single = ref.read(selectedProductProvider);
+      if (single != null) items = [single];
+    }
     final color = ref.read(selectedColorProvider);
     final size = ref.read(selectedSizeProvider);
     if (photo == null) {
       fail('먼저 피팅에 사용할 사진을 선택해 주세요.', code: 'PHOTO_REQUIRED');
       return null;
     }
-    if (product == null) {
-      fail('먼저 입어볼 상품을 선택해 주세요.', code: 'PRODUCT_REQUIRED');
+    if (items.isEmpty) {
+      fail('먼저 입어볼 아이템을 선택해 주세요.', code: 'PRODUCT_REQUIRED');
       return null;
     }
+    final product = items.first;
 
     final token = ++_runToken;
     final repository = ref.read(tryOnRepositoryProvider);
@@ -737,6 +783,9 @@ class TryOnController extends Notifier<TryOnProcessState> {
         photoId: uploaded.id,
         mode: GenerationModes.direct,
         productId: product.id,
+        productIds: items.length > 1
+            ? items.map((item) => item.id).toList(growable: false)
+            : null,
         options: <String, dynamic>{
           'styles': <String>['casual'],
         },

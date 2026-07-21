@@ -68,6 +68,7 @@ class HttpTryOnRepository extends TryOnRepository {
     required String photoId,
     required String mode,
     required String productId,
+    List<String>? productIds,
     Map<String, dynamic> options = const <String, dynamic>{},
   }) {
     return guardApi(() async {
@@ -77,6 +78,7 @@ class HttpTryOnRepository extends TryOnRepository {
           'photo_id': photoId,
           'mode': mode,
           'product_id': productId,
+          'product_ids': ?productIds,
           'options': options,
         },
       );

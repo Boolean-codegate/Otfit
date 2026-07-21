@@ -38,10 +38,12 @@ abstract class TryOnRepository {
   });
 
   /// Mirrors POST /generations.
+  /// [productIds]: 멀티 아이템(옷/하의/액세서리, 최대 3) — 첫 항목이 대표 상품.
   Future<GenerationJob> createGeneration({
     required String photoId,
     required String mode,
     required String productId,
+    List<String>? productIds,
     Map<String, dynamic> options = const <String, dynamic>{},
   });
 
@@ -192,6 +194,7 @@ class MockTryOnRepository extends TryOnRepository {
     required String photoId,
     required String mode,
     required String productId,
+    List<String>? productIds,
     Map<String, dynamic> options = const <String, dynamic>{},
   }) async {
     await _wait();

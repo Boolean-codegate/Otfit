@@ -26,22 +26,57 @@ logger = logging.getLogger(__name__)
 _FALLBACK_IMAGE_MODEL = "gpt-image-1.5"
 
 # 계약 카테고리 → 지시문에 쓸 명칭
-_CATEGORY_KO = {"top": "상의", "jacket": "재킷", "shirt": "셔츠", "dress": "원피스"}
+_CATEGORY_KO = {
+    "top": "상의", "jacket": "재킷", "shirt": "셔츠", "dress": "원피스",
+    "pants": "하의", "accessory": "액세서리",
+}
 
 
-def _instruction(garment: GarmentSpec, style: str | None, variation_seed: int) -> str:
-    """ChatGPT에서 실제로 잘 됐던 지시문 그대로 (+상품 디테일 보강)."""
-    category = _CATEGORY_KO.get(garment.category, "옷")
+def _attrs_desc(garment: GarmentSpec) -> str:
     attrs = garment.attributes
-    desc = ", ".join(
+    return ", ".join(
         str(attrs[key]) for key in ("color", "pattern", "material") if attrs.get(key)
     )
-    text = (
-        f"첫 번째 사진의 인물, 얼굴, 헤어, 체형, 포즈, 배경을 그대로 유지하면서 "
-        f"두 번째 사진의 옷({category})만 자연스럽게 입혀줘. 사실적인 패션 사진처럼."
-    )
-    if desc:
-        text += f" (상품: {garment.title}, {desc})"
+
+
+def _instruction(garments: list[GarmentSpec], style: str | None, variation_seed: int) -> str:
+    """멀티 아이템 지시문.
+
+    상품 사진에는 착용 모델이 있을 수 있으므로, '해당 아이템만 참고'를 명시해
+    액세서리/하의 사진의 모델·다른 옷이 결과에 새어들지 않게 한다.
+    단일 의류(비액세서리)는 실측 검증된 원래 지시문을 유지한다.
+    """
+    if len(garments) == 1 and garments[0].category != "accessory":
+        garment = garments[0]
+        category = _CATEGORY_KO.get(garment.category, "옷")
+        desc = _attrs_desc(garment)
+        text = (
+            f"첫 번째 사진의 인물, 얼굴, 헤어, 체형, 포즈, 배경을 그대로 유지하면서 "
+            f"두 번째 사진의 옷({category})만 자연스럽게 입혀줘. 사실적인 패션 사진처럼."
+        )
+        if desc:
+            text += f" (상품: {garment.title}, {desc})"
+    else:
+        lines = [
+            "첫 번째 사진의 인물, 얼굴, 헤어, 체형, 포즈, 배경을 그대로 유지해.",
+            "이후 사진들은 상품 사진이야. 상품 사진 속 모델의 얼굴·몸·배경과 "
+            "그 모델이 입은 다른 옷은 절대 결과에 반영하지 말고, 아래 지정한 아이템만 참고해:",
+        ]
+        for index, garment in enumerate(garments, start=2):
+            category = _CATEGORY_KO.get(garment.category, "옷")
+            desc = _attrs_desc(garment)
+            detail = f"{garment.title}" + (f", {desc}" if desc else "")
+            if garment.category == "accessory":
+                lines.append(
+                    f"- {index}번째 사진: 액세서리({detail})만 인물에게 자연스럽게 착용시켜."
+                )
+            else:
+                lines.append(
+                    f"- {index}번째 사진: {category}({detail})를 인물에게 자연스럽게 입혀줘."
+                )
+        lines.append("위에 지정한 아이템 외에는 인물의 옷차림을 포함해 아무것도 바꾸지 마.")
+        lines.append("사실적인 패션 사진처럼 완성해.")
+        text = "\n".join(lines)
     if style:
         text += f" 스타일 무드: {style}."
     if variation_seed:
@@ -60,15 +95,21 @@ class OpenAIGenerationProvider(GenerationProvider):
             timeout=settings.openai_image_timeout_seconds,
         )
 
-    async def _generate(self, instruction: str, human_url: str, garment_url: str, tool: dict) -> bytes:
+    async def _generate(
+        self, instruction: str, human_url: str, garment_urls: list[str], tool: dict
+    ) -> bytes:
         response = await self.client.responses.create(
             model=self.settings.vision_model,  # gpt-5.6-sol (도구 호출 오케스트레이션)
             input=[{
                 "role": "user",
                 "content": [
                     {"type": "input_text", "text": instruction},
-                    {"type": "input_image", "image_url": human_url},      # 1번째 = 인물
-                    {"type": "input_image", "image_url": garment_url},    # 2번째 = 입힐 옷
+                    {"type": "input_image", "image_url": human_url},  # 1번째 = 인물
+                    # 2번째부터 = 입힐 아이템들 (옷/하의/액세서리)
+                    *[
+                        {"type": "input_image", "image_url": url}
+                        for url in garment_urls
+                    ],
                 ],
             }],
             tools=[tool],
@@ -94,11 +135,26 @@ class OpenAIGenerationProvider(GenerationProvider):
         style: str | None = None,
         variation_seed: int = 0,
     ) -> bytes:
-        if not garment.image_url.startswith("http"):
-            raise RuntimeError(f"상품 이미지 URL이 유효하지 않습니다: {garment.image_url!r}")
+        return await self.swap_garments(
+            photo_bytes, [garment], analysis, style=style, variation_seed=variation_seed
+        )
+
+    async def swap_garments(
+        self,
+        photo_bytes: bytes,
+        garments: list[GarmentSpec],
+        analysis: VisionAnalysis,
+        style: str | None = None,
+        variation_seed: int = 0,
+    ) -> bytes:
+        """옷/하의/액세서리 1~3개를 한 번의 생성 콜로 처리한다."""
+        for garment in garments:
+            if not garment.image_url.startswith("http"):
+                raise RuntimeError(f"상품 이미지 URL이 유효하지 않습니다: {garment.image_url!r}")
 
         human_url = await publish_photo_url(photo_bytes)
-        instruction = _instruction(garment, style, variation_seed)
+        instruction = _instruction(garments, style, variation_seed)
+        garment_urls = [garment.image_url for garment in garments]
 
         # 이미지 모델 폴백 체인: IMAGE_MODEL(gpt-image-2) → gpt-image-1.5 → 도구 기본값
         tool_candidates: list[dict] = [
@@ -112,8 +168,8 @@ class OpenAIGenerationProvider(GenerationProvider):
         for tool in tool_candidates:
             model_label = tool.get("model", "(도구 기본값)")
             try:
-                image = await self._generate(instruction, human_url, garment.image_url, tool)
-                logger.info("image_generation 성공 (image model=%s)", model_label)
+                image = await self._generate(instruction, human_url, garment_urls, tool)
+                logger.info("image_generation 성공 (image model=%s, items=%d)", model_label, len(garments))
                 return image
             except (openai.BadRequestError, openai.NotFoundError) as exc:
                 message = str(exc)
@@ -127,7 +183,7 @@ class OpenAIGenerationProvider(GenerationProvider):
                 # 긴 작업 특성상 타임아웃은 1회 재시도 (같은 모델)
                 logger.warning("image_generation timeout (model=%s) → 재시도", model_label)
                 try:
-                    return await self._generate(instruction, human_url, garment.image_url, tool)
+                    return await self._generate(instruction, human_url, garment_urls, tool)
                 except Exception as retry_exc:  # noqa: BLE001
                     last_error = retry_exc
                     continue
