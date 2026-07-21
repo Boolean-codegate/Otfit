@@ -86,8 +86,6 @@ CURATED = {
     # 2026-07-22 전수 검수: 이미지 실물과 메타 불일치 정정
     "black_satin_dress.jpg": ("퍼플 오프숄더 새틴 드레스", "CLASSIQ", 89000, "romantic", "purple", "solid", "long", "satin"),
     "white_cotton_shirt.jpg": ("블루 챔브레이 도트 셔츠", "DENIMLAB", 45000, "casual", "blue", "dot", "regular", "cotton"),
-    "blue_denim_shirt.jpg": ("클래식 셔츠 3종 컬렉션", "CLASSIQ", 49000, "classic", "multi", "solid", "regular", "cotton"),
-    "denim_jacket.jpg": ("블랙 데일리 티 컬렉션", "STREETONE", 39000, "street", "black", "graphic", "regular", "cotton"),
 }
 
 
