@@ -113,6 +113,7 @@ async def _run(session: AsyncSession, job_id: uuid.UUID) -> None:
                 brand=product.brand,
                 category=product.category,
                 attributes=product.attributes,
+                image_url=product.image_url,
             )
             for attempt in range(settings.generation_max_retries + 1):
                 generated = await generation.swap_garment(
