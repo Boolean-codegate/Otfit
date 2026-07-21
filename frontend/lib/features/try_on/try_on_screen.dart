@@ -68,10 +68,8 @@ class _TryOnScreenState extends ConsumerState<TryOnScreen> {
     if (mounted) setState(() => _isOpeningProcess = false);
   }
 
-  /// 슬롯별 상품 고르기 시트 — 해당 카테고리 상품만 보여준다.
+  /// 슬롯별 상품 고르기 시트 — 즉시 열리고, 로딩/에러도 시트 안에서 보여준다.
   Future<void> _pickForSlot(String slot) async {
-    final products = await ref.read(productsProvider.future);
-    if (!mounted) return;
     final allowed = switch (slot) {
       OutfitController.slotPants => const {ProductCategories.pants},
       OutfitController.slotAccessory => const {ProductCategories.accessory},
@@ -82,15 +80,6 @@ class _TryOnScreenState extends ConsumerState<TryOnScreen> {
           ProductCategories.dress,
         },
     };
-    final candidates = products
-        .where((product) => allowed.contains(product.category))
-        .toList(growable: false);
-    if (candidates.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('아직 이 카테고리에 상품이 없어요.')),
-      );
-      return;
-    }
     final picked = await showModalBottomSheet<Product>(
       context: context,
       isScrollControlled: true,
@@ -108,38 +97,77 @@ class _TryOnScreenState extends ConsumerState<TryOnScreen> {
                 ),
               ),
               Expanded(
-                child: GridView.builder(
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
-                  gridDelegate:
-                      const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 160,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    childAspectRatio: 0.72,
-                  ),
-                  itemCount: candidates.length,
-                  itemBuilder: (context, index) {
-                    final product = candidates[index];
-                    return GestureDetector(
-                      onTap: () => Navigator.of(sheetContext).pop(product),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: _productImage(product),
+                child: Consumer(
+                  builder: (context, ref, _) {
+                    final products = ref.watch(productsProvider);
+                    return products.when(
+                      loading: () => const Center(
+                          child: CircularProgressIndicator()),
+                      error: (error, _) => Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('상품을 불러오지 못했어요'),
+                            const SizedBox(height: 10),
+                            OutlinedButton(
+                              onPressed: () =>
+                                  ref.invalidate(productsProvider),
+                              child: const Text('다시 시도'),
                             ),
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            product.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.labelSmall,
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
+                      data: (items) {
+                        final candidates = items
+                            .where((product) =>
+                                allowed.contains(product.category))
+                            .toList(growable: false);
+                        if (candidates.isEmpty) {
+                          return const Center(
+                              child: Text('아직 이 카테고리에 상품이 없어요.'));
+                        }
+                        return GridView.builder(
+                          padding:
+                              const EdgeInsets.fromLTRB(20, 4, 20, 20),
+                          gridDelegate:
+                              const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 160,
+                            mainAxisSpacing: 10,
+                            crossAxisSpacing: 10,
+                            childAspectRatio: 0.72,
+                          ),
+                          itemCount: candidates.length,
+                          itemBuilder: (context, index) {
+                            final product = candidates[index];
+                            return GestureDetector(
+                              onTap: () =>
+                                  Navigator.of(sheetContext).pop(product),
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.stretch,
+                                children: [
+                                  Expanded(
+                                    child: ClipRRect(
+                                      borderRadius:
+                                          BorderRadius.circular(12),
+                                      child: _productImage(product),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Text(
+                                    product.title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall,
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      },
                     );
                   },
                 ),
@@ -149,7 +177,7 @@ class _TryOnScreenState extends ConsumerState<TryOnScreen> {
         ),
       ),
     );
-    if (picked != null) {
+    if (picked != null && mounted) {
       ref.read(outfitProvider.notifier).select(picked);
     }
   }

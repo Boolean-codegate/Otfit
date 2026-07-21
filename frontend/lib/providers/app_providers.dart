@@ -301,6 +301,8 @@ class AuthSessionController extends AsyncNotifier<User?> {
 }
 
 final productsProvider = FutureProvider<List<Product>>((ref) {
+  // 로그인 전 실패(401 등)가 캐시로 남지 않도록 세션에 의존
+  ref.watch(authSessionProvider.select((session) => session.value?.id));
   return ref.watch(productRepositoryProvider).getProducts();
 });
 
