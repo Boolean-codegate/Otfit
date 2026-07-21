@@ -16,6 +16,7 @@ import hashlib
 import re
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import quote
 
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
@@ -217,8 +218,11 @@ async def seed() -> None:
                 else key  # 응답 시점 presigned 변환
             )
             fields = build_product_fields(category, filename)
+            # 실사진 상품은 매칭된 무신사 상품 페이지로, 스톡 이미지 상품은
+            # 동일 상품이 존재하지 않으므로 상품명 무신사 검색 결과로 연결 (죽은 링크 방지)
             product_url = MUSINSA_URLS.get(
-                filename, f"https://shop.partner-shop.example/products/{external_id}"
+                filename,
+                f"https://www.musinsa.com/search/goods?keyword={quote(fields['title'])}",
             )
             text = (
                 f"{fields['title']} {fields['brand']} {category} "
