@@ -13,7 +13,9 @@
 | ⚙️ API (Swagger) | https://port-0-otfit-api-m7c8oc297ff7fd19.sel4.cloudtype.app/docs |
 | 🎬 **데모 영상** | [demo/OTFIT_DEMO.mp4](demo/OTFIT_DEMO.mp4) |
 
-🎬 **[YouTube에서 데모 영상 보기](https://www.youtube.com/watch?v=f_NS_p3AZ7s)**
+[![데모 영상 보기](https://img.youtube.com/vi/f_NS_p3AZ7s/maxresdefault.jpg)](https://www.youtube.com/watch?v=f_NS_p3AZ7s)
+
+> 이미지를 클릭하면 YouTube에서 데모 영상을 볼 수 있어요.
 
 ## ✨ 핵심 기능
 
