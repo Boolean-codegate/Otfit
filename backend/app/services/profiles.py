@@ -57,6 +57,7 @@ class ProfileService:
         return {
             "id": user.id,
             "nickname": user.nickname,
+            "bio": user.bio,
             "post_count": post_count,
             "follower_count": follower_count,
             "following_count": following_count,
@@ -83,6 +84,34 @@ class ProfileService:
             "items": items,
             "next_cursor": str(offset + limit) if len(posts) == limit else None,
         }
+
+    async def followers(self, user_id: uuid.UUID) -> list[User]:
+        await self._get_user(user_id)
+        rows = await self.session.execute(
+            select(User)
+            .join(Follow, Follow.follower_id == User.id)
+            .where(Follow.followee_id == user_id)
+            .order_by(Follow.created_at.desc())
+        )
+        return list(rows.scalars())
+
+    async def following(self, user_id: uuid.UUID) -> list[User]:
+        await self._get_user(user_id)
+        rows = await self.session.execute(
+            select(User)
+            .join(Follow, Follow.followee_id == User.id)
+            .where(Follow.follower_id == user_id)
+            .order_by(Follow.created_at.desc())
+        )
+        return list(rows.scalars())
+
+    async def update_me(self, viewer: User, *, nickname: str | None, bio: str | None) -> User:
+        if nickname is not None:
+            viewer.nickname = nickname.strip()
+        if bio is not None:
+            viewer.bio = bio.strip()
+        await self.session.commit()
+        return viewer
 
     async def follow(self, viewer: User, user_id: uuid.UUID) -> None:
         if viewer.id == user_id:

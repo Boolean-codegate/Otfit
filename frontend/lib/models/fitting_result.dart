@@ -62,6 +62,7 @@ class User {
     required this.id,
     required this.email,
     required this.nickname,
+    this.bio = '',
     required this.creditBalance,
     required this.isPremium,
     required this.createdAt,
@@ -70,6 +71,7 @@ class User {
   final String id;
   final String email;
   final String nickname;
+  final String bio;
   final int creditBalance;
   final bool isPremium;
   final DateTime createdAt;
@@ -78,6 +80,7 @@ class User {
     id: _requiredString(json, 'id'),
     email: _requiredString(json, 'email'),
     nickname: _requiredString(json, 'nickname'),
+    bio: (json['bio'] ?? '').toString(),
     creditBalance: _intValue(json['credit_balance']),
     isPremium: json['is_premium'] == true,
     createdAt: _dateValue(json['created_at']),

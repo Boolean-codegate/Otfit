@@ -63,51 +63,65 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
   }
 
   /// 피팅 결과를 SNS 피드에 게시 (계약 §10 POST /posts).
+  /// OTFIT 아이덴티티: 비포→애프터 변신을 기본으로 함께 공개한다.
   Future<void> _publishToFeed(FittingResult result) async {
     final controller = TextEditingController();
-    final caption = await showModalBottomSheet<String>(
+    final beforePhoto = ref.read(uploadedPhotoProvider);
+    var includeBefore = beforePhoto != null; // 기본 ON — 변신 강조
+    final confirmed = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      builder: (sheetContext) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          20, 20, 20, 20 + MediaQuery.of(sheetContext).viewInsets.bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('피드에 게시',
-                style: Theme.of(sheetContext).textTheme.titleLarge),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              maxLength: 300,
-              maxLines: 3,
-              autofocus: true,
-              decoration: const InputDecoration(
-                hintText: '이 룩 어때요? 살까 말까 물어보세요 🙋',
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            20, 20, 20, 20 + MediaQuery.of(sheetContext).viewInsets.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('변신 게시하기',
+                  style: Theme.of(sheetContext).textTheme.titleLarge),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                maxLength: 300,
+                maxLines: 3,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: '이 룩 어때요? 살까 말까 물어보세요 🙋',
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            FilledButton(
-              onPressed: () =>
-                  Navigator.of(sheetContext).pop(controller.text.trim()),
-              child: const Text('게시하기'),
-            ),
-          ],
+              if (beforePhoto != null)
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: includeBefore,
+                  onChanged: (value) =>
+                      setSheetState(() => includeBefore = value),
+                  title: const Text('비포 사진 함께 공개'),
+                  subtitle: const Text('비포 → 애프터 변신이 피드에서 전환돼요 ✨'),
+                ),
+              const SizedBox(height: 8),
+              FilledButton(
+                onPressed: () => Navigator.of(sheetContext).pop(true),
+                child: const Text('게시하기'),
+              ),
+            ],
+          ),
         ),
       ),
     );
-    if (caption == null || !mounted) return;
+    if (confirmed != true || !mounted) return;
     try {
       await ref.read(feedProvider.notifier).publish(
             resultId: result.generationResult?.id,
             productId:
                 result.generationResult == null ? result.product.id : null,
-            caption: caption,
+            caption: controller.text.trim(),
+            beforeUrl: includeBefore ? beforePhoto?.storageUrl : null,
           );
       if (!mounted) return;
-      _showMessage('피드에 게시했어요! 투표 반응을 확인해보세요.');
+      _showMessage('변신을 게시했어요! 투표 반응을 확인해보세요.');
       context.go('/feed');
     } on Object catch (error) {
       if (mounted) _showMessage('게시 실패: $error');

@@ -19,6 +19,7 @@ class UserProfileOut(BaseModel):
 
     id: uuid.UUID
     nickname: str
+    bio: str = ""
     post_count: int
     follower_count: int
     following_count: int

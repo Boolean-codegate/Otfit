@@ -212,11 +212,13 @@ class FeedController extends AsyncNotifier<List<Post>> {
     String? resultId,
     String? productId,
     String caption = '',
+    String? beforeUrl,
   }) async {
     final post = await ref.read(postRepositoryProvider).createPost(
           resultId: resultId,
           productId: productId,
           caption: caption,
+          beforeUrl: beforeUrl,
         );
     state = AsyncValue.data([post, ...state.value ?? const <Post>[]]);
     return post;

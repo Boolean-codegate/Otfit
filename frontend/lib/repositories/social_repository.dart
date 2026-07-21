@@ -1,3 +1,4 @@
+import '../models/fitting_result.dart' show User;
 import '../models/post.dart';
 import '../models/social.dart';
 
@@ -15,6 +16,13 @@ abstract class SocialRepository {
   Future<void> unfollow(String userId);
 
   Future<void> deletePost(String postId);
+
+  Future<List<UserSummary>> fetchFollowers(String userId);
+
+  Future<List<UserSummary>> fetchFollowing(String userId);
+
+  /// PATCH /me — 닉네임/소개글 수정.
+  Future<User> updateMe({String? nickname, String? bio});
 }
 
 class MockSocialRepository implements SocialRepository {
@@ -49,4 +57,21 @@ class MockSocialRepository implements SocialRepository {
 
   @override
   Future<void> deletePost(String postId) async {}
+
+  @override
+  Future<List<UserSummary>> fetchFollowers(String userId) async => const [];
+
+  @override
+  Future<List<UserSummary>> fetchFollowing(String userId) async => const [];
+
+  @override
+  Future<User> updateMe({String? nickname, String? bio}) async => User(
+        id: 'u_mock_1',
+        email: 'mock@otfit.local',
+        nickname: nickname ?? '오핏',
+        bio: bio ?? '',
+        creditBalance: 30,
+        isPremium: false,
+        createdAt: DateTime.now().toUtc(),
+      );
 }

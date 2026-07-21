@@ -5,6 +5,7 @@ from fastapi import APIRouter, Query, status
 from app.core.deps import CurrentUser, DbSession
 from app.core.errors import AppError
 from app.schemas.generation import OkResponse
+from app.schemas.auth import ProfileUpdateRequest, UserOut
 from app.schemas.social_profile import UserPostsResponse, UserProfileOut, UserSearchResponse
 from app.services.profiles import ProfileService
 
@@ -49,6 +50,23 @@ async def user_posts(
         raise AppError("cursor가 올바르지 않습니다.", code="VALIDATION_ERROR", status_code=422)
     return await ProfileService(session).user_posts(
         user, _resolve_id(user_id, user.id), limit, offset
+    )
+
+
+@router.get("/users/{user_id}/followers", response_model=UserSearchResponse)
+async def followers(user_id: str, user: CurrentUser, session: DbSession):
+    return {"items": await ProfileService(session).followers(_resolve_id(user_id, user.id))}
+
+
+@router.get("/users/{user_id}/following", response_model=UserSearchResponse)
+async def following(user_id: str, user: CurrentUser, session: DbSession):
+    return {"items": await ProfileService(session).following(_resolve_id(user_id, user.id))}
+
+
+@router.patch("/me", response_model=UserOut)
+async def update_me(body: ProfileUpdateRequest, user: CurrentUser, session: DbSession):
+    return await ProfileService(session).update_me(
+        user, nickname=body.nickname, bio=body.bio
     )
 
 

@@ -1,4 +1,5 @@
 import '../../core/network/api_client.dart';
+import '../../models/fitting_result.dart' show User;
 import '../../models/post.dart';
 import '../../models/social.dart';
 import '../social_repository.dart';
@@ -67,6 +68,37 @@ class HttpSocialRepository implements SocialRepository {
   Future<void> deletePost(String postId) {
     return guardApi(() async {
       await _client.dio.delete<void>('/posts/$postId');
+    });
+  }
+
+  Future<List<UserSummary>> _userList(String path) {
+    return guardApi(() async {
+      final response = await _client.dio.get<Map<String, dynamic>>(path);
+      final items = response.data?['items'];
+      if (items is! List) return const <UserSummary>[];
+      return items
+          .whereType<Map>()
+          .map((item) => UserSummary.fromJson(Map<String, dynamic>.from(item)))
+          .toList(growable: false);
+    });
+  }
+
+  @override
+  Future<List<UserSummary>> fetchFollowers(String userId) =>
+      _userList('/users/$userId/followers');
+
+  @override
+  Future<List<UserSummary>> fetchFollowing(String userId) =>
+      _userList('/users/$userId/following');
+
+  @override
+  Future<User> updateMe({String? nickname, String? bio}) {
+    return guardApi(() async {
+      final response = await _client.dio.patch<Map<String, dynamic>>(
+        '/me',
+        data: <String, dynamic>{'nickname': ?nickname, 'bio': ?bio},
+      );
+      return User.fromJson(response.data ?? const <String, dynamic>{});
     });
   }
 }

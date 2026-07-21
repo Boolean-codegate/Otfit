@@ -46,10 +46,6 @@ class _PhotoSelectionScreenState extends ConsumerState<PhotoSelectionScreen> {
   }
 
   Future<void> _pickPhoto(ImageSource source) async {
-    if (source == ImageSource.camera && kIsWeb) {
-      _showMessage('카메라 촬영은 모바일 앱에서 이용해주세요.');
-      return;
-    }
     if (_isPicking || _isAnalyzing) return;
 
     setState(() => _isPicking = true);
@@ -60,6 +56,8 @@ class _PhotoSelectionScreenState extends ConsumerState<PhotoSelectionScreen> {
         source: source,
         imageQuality: 92,
         maxWidth: 1800,
+        // 셀피 피팅이 기본 시나리오 — 모바일 웹/앱 모두 전면 카메라 우선
+        preferredCameraDevice: CameraDevice.front,
       );
       if (file == null) return;
 
@@ -189,13 +187,9 @@ class _PhotoSelectionScreenState extends ConsumerState<PhotoSelectionScreen> {
             ),
             ListTile(
               minTileHeight: 56,
-              enabled: !kIsWeb,
               leading: const Icon(Icons.photo_camera_outlined),
               title: const Text('카메라로 촬영'),
-              subtitle: kIsWeb ? const Text('모바일 앱에서 이용할 수 있어요.') : null,
-              onTap: kIsWeb
-                  ? null
-                  : () => Navigator.of(context).pop(ImageSource.camera),
+              onTap: () => Navigator.of(context).pop(ImageSource.camera),
             ),
           ],
         ),
@@ -341,7 +335,7 @@ class _EmptyPhotoLayout extends StatelessWidget {
         constraints: const BoxConstraints(maxWidth: 760),
         child: PhotoUploadCard(
           isPicking: isPicking,
-          cameraAvailable: !kIsWeb,
+          cameraAvailable: true,
           onPickGallery: onPickGallery,
           onTakePhoto: onTakePhoto,
         ),

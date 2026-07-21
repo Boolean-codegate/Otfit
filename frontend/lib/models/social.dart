@@ -19,6 +19,7 @@ class UserProfile {
   const UserProfile({
     required this.id,
     required this.nickname,
+    this.bio = '',
     required this.postCount,
     required this.followerCount,
     required this.followingCount,
@@ -28,6 +29,7 @@ class UserProfile {
 
   final String id;
   final String nickname;
+  final String bio;
   final int postCount;
   final int followerCount;
   final int followingCount;
@@ -37,6 +39,7 @@ class UserProfile {
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
         id: (json['id'] ?? '').toString(),
         nickname: (json['nickname'] ?? '').toString(),
+        bio: (json['bio'] ?? '').toString(),
         postCount: (json['post_count'] as num?)?.toInt() ?? 0,
         followerCount: (json['follower_count'] as num?)?.toInt() ?? 0,
         followingCount: (json['following_count'] as num?)?.toInt() ?? 0,

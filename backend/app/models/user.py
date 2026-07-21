@@ -11,6 +11,7 @@ class User(Base, UUIDPkMixin, TimestampMixin):
     # 소셜 가입 계정은 비밀번호가 없다
     hashed_password: Mapped[str | None] = mapped_column(String(255), nullable=True)
     nickname: Mapped[str] = mapped_column(String(50), nullable=False)
+    bio: Mapped[str] = mapped_column(String(200), default="", nullable=False, server_default="")
     credit_balance: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     is_premium: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 

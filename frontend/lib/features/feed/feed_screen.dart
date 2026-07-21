@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/widgets/before_after_image.dart';
 import '../../core/widgets/responsive_content.dart';
 import '../../models/post.dart';
 import '../../providers/app_providers.dart';
@@ -310,19 +311,10 @@ class _PostCard extends ConsumerWidget {
               ],
             ),
           ),
-          // 결과 이미지
-          AspectRatio(
-            aspectRatio: 3 / 4,
-            child: post.afterUrl.startsWith('assets/')
-                ? Image.asset(post.afterUrl, fit: BoxFit.cover)
-                : Image.network(
-                    post.afterUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => const ColoredBox(
-                      color: AppColors.surfaceMuted,
-                      child: Icon(Icons.broken_image_outlined, size: 44),
-                    ),
-                  ),
+          // 결과 이미지 — 비포→애프터 전환이 OTFIT의 핵심
+          BeforeAfterImage(
+            afterUrl: post.afterUrl,
+            beforeUrl: post.beforeUrl,
           ),
           if (post.caption.isNotEmpty)
             Padding(

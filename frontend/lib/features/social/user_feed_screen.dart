@@ -6,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/widgets/responsive_content.dart';
 import '../../models/post.dart';
 import '../../models/product.dart';
+import '../../core/widgets/before_after_image.dart';
 import '../../models/social.dart';
 import '../../providers/app_providers.dart';
 import '../feed/feed_screen.dart' show CommentsSheet;
@@ -258,19 +259,50 @@ class UserFeedScreen extends ConsumerWidget {
                                 return GestureDetector(
                                   onTap: () => _openPost(context, ref, post,
                                       profile.value?.isMe == true),
-                                  child: post.afterUrl.startsWith('assets/')
-                                      ? Image.asset(post.afterUrl,
-                                          fit: BoxFit.cover)
-                                      : Image.network(
-                                          post.afterUrl,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, _, _) =>
-                                              const ColoredBox(
-                                            color: AppColors.surfaceMuted,
-                                            child: Icon(Icons
-                                                .broken_image_outlined),
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      post.afterUrl.startsWith('assets/')
+                                          ? Image.asset(post.afterUrl,
+                                              fit: BoxFit.cover)
+                                          : Image.network(
+                                              post.afterUrl,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, _, _) =>
+                                                  const ColoredBox(
+                                                color:
+                                                    AppColors.surfaceMuted,
+                                                child: Icon(Icons
+                                                    .broken_image_outlined),
+                                              ),
+                                            ),
+                                      if (post.beforeUrl != null)
+                                        Positioned(
+                                          top: 5,
+                                          left: 5,
+                                          child: Container(
+                                            padding:
+                                                const EdgeInsets.symmetric(
+                                                    horizontal: 6,
+                                                    vertical: 2),
+                                            decoration: BoxDecoration(
+                                              gradient:
+                                                  AppColors.primaryGradient,
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: const Text(
+                                              'B→A',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                            ),
                                           ),
                                         ),
+                                    ],
+                                  ),
                                 );
                               },
                               childCount: items.length,
@@ -287,96 +319,298 @@ class UserFeedScreen extends ConsumerWidget {
   }
 }
 
-class _ProfileHeader extends StatelessWidget {
+class _ProfileHeader extends ConsumerWidget {
   const _ProfileHeader({required this.profile, required this.onFollowTap});
 
   final UserProfile profile;
   final VoidCallback onFollowTap;
 
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 14),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 72,
-                height: 72,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  profile.nickname.characters.first,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 26,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 22),
-              Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _CountColumn(count: profile.postCount, label: '게시물'),
-                    _CountColumn(count: profile.followerCount, label: '팔로워'),
-                    _CountColumn(count: profile.followingCount, label: '팔로잉'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              profile.nickname,
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
+  Future<void> _editProfile(BuildContext context, WidgetRef ref) async {
+    final nicknameController = TextEditingController(text: profile.nickname);
+    final bioController = TextEditingController(text: profile.bio);
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          20, 20, 20, 20 + MediaQuery.of(sheetContext).viewInsets.bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('프로필 편집',
+                style: Theme.of(sheetContext).textTheme.titleLarge),
+            const SizedBox(height: 14),
+            TextField(
+              controller: nicknameController,
+              maxLength: 50,
+              decoration: const InputDecoration(labelText: '닉네임'),
+            ),
+            TextField(
+              controller: bioController,
+              maxLength: 200,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: '소개글',
+                hintText: '나의 스타일을 소개해보세요 ✨',
               ),
             ),
-          ),
-          if (!profile.isMe) ...[
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: profile.isFollowing
-                  ? OutlinedButton(
-                      onPressed: onFollowTap, child: const Text('팔로잉 ✓'))
-                  : FilledButton(
-                      onPressed: onFollowTap, child: const Text('팔로우')),
+            const SizedBox(height: 8),
+            FilledButton(
+              onPressed: () => Navigator.of(sheetContext).pop(true),
+              child: const Text('저장'),
             ),
           ],
-        ],
+        ),
+      ),
+    );
+    if (saved != true || !context.mounted) return;
+    try {
+      await ref.read(socialRepositoryProvider).updateMe(
+            nickname: nicknameController.text.trim(),
+            bio: bioController.text.trim(),
+          );
+      ref.invalidate(userProfileProvider(profile.isMe ? 'me' : profile.id));
+      await ref.read(authSessionProvider.notifier).refreshMe();
+    } on Object catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('저장 실패: $error')));
+      }
+    }
+  }
+
+  void _showFollowList(BuildContext context, {required bool followers}) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (_) => _FollowListSheet(
+        userId: profile.isMe ? 'me' : profile.id,
+        followers: followers,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: AppColors.softGradient,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: AppColors.divider),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 58,
+                  height: 58,
+                  alignment: Alignment.center,
+                  decoration: const BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    profile.nickname.characters.first,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 22,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        profile.nickname,
+                        style: textTheme.titleLarge
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                      Text(
+                        profile.bio.isEmpty
+                            ? (profile.isMe
+                                ? '소개글을 추가해보세요'
+                                : '비포 → 애프터로 변신 중')
+                            : profile.bio,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.bodySmall
+                            ?.copyWith(color: AppColors.secondaryText),
+                      ),
+                    ],
+                  ),
+                ),
+                if (profile.isMe)
+                  IconButton(
+                    tooltip: '프로필 편집',
+                    icon: const Icon(Icons.edit_outlined, size: 20),
+                    onPressed: () => _editProfile(context, ref),
+                  )
+                else
+                  profile.isFollowing
+                      ? OutlinedButton(
+                          onPressed: onFollowTap,
+                          style: OutlinedButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          child: const Text('팔로잉 ✓'),
+                        )
+                      : FilledButton(
+                          onPressed: onFollowTap,
+                          style: FilledButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          child: const Text('팔로우'),
+                        ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            // OTFIT 아이덴티티: '변신 N회'가 첫 번째
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _StatChip(
+                  emoji: '✨',
+                  label: '변신 ${profile.postCount}회',
+                  emphasized: true,
+                ),
+                _StatChip(
+                  emoji: '💜',
+                  label: '팔로워 ${profile.followerCount}',
+                  onTap: () => _showFollowList(context, followers: true),
+                ),
+                _StatChip(
+                  emoji: '👀',
+                  label: '팔로잉 ${profile.followingCount}',
+                  onTap: () => _showFollowList(context, followers: false),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _CountColumn extends StatelessWidget {
-  const _CountColumn({required this.count, required this.label});
+class _StatChip extends StatelessWidget {
+  const _StatChip({
+    required this.emoji,
+    required this.label,
+    this.onTap,
+    this.emphasized = false,
+  });
 
-  final int count;
+  final String emoji;
   final String label;
+  final VoidCallback? onTap;
+  final bool emphasized;
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Column(
-      children: [
-        Text('$count',
-            style: textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w900)),
-        Text(label,
-            style:
-                textTheme.labelSmall?.copyWith(color: AppColors.secondaryText)),
-      ],
+    return Material(
+      color: emphasized ? AppColors.primaryPurple : AppColors.surface,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+          child: Text(
+            '$emoji $label',
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w800,
+              color: emphasized ? Colors.white : AppColors.mainText,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 팔로워/팔로잉 목록 — 탭하면 그 유저의 변신 피드로
+class _FollowListSheet extends ConsumerWidget {
+  const _FollowListSheet({required this.userId, required this.followers});
+
+  final String userId;
+  final bool followers;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final repository = ref.read(socialRepositoryProvider);
+    return SizedBox(
+      height: MediaQuery.sizeOf(context).height * 0.55,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 12, 4),
+            child: Row(
+              children: [
+                Text(followers ? '팔로워' : '팔로잉',
+                    style: Theme.of(context).textTheme.titleLarge),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: FutureBuilder(
+              future: followers
+                  ? repository.fetchFollowers(userId)
+                  : repository.fetchFollowing(userId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final users = snapshot.data ?? const <UserSummary>[];
+                if (users.isEmpty) {
+                  return Center(
+                      child: Text(followers ? '아직 팔로워가 없어요' : '아직 팔로잉이 없어요'));
+                }
+                return ListView.builder(
+                  itemCount: users.length,
+                  itemBuilder: (context, index) {
+                    final user = users[index];
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: AppColors.lightPurple,
+                        child: Text(
+                          user.nickname.characters.first,
+                          style: const TextStyle(
+                            color: AppColors.primaryPurple,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      title: Text(user.nickname),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        context.push('/users/${user.id}');
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -486,22 +720,10 @@ class _PostDetailSheetState extends ConsumerState<_PostDetailSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      ClipRRect(
+                      BeforeAfterImage(
+                        afterUrl: _post.afterUrl,
+                        beforeUrl: _post.beforeUrl,
                         borderRadius: BorderRadius.circular(16),
-                        child: AspectRatio(
-                          aspectRatio: 3 / 4,
-                          child: _post.afterUrl.startsWith('assets/')
-                              ? Image.asset(_post.afterUrl, fit: BoxFit.cover)
-                              : Image.network(
-                                  _post.afterUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, _, _) => const ColoredBox(
-                                    color: AppColors.surfaceMuted,
-                                    child:
-                                        Icon(Icons.broken_image_outlined),
-                                  ),
-                                ),
-                        ),
                       ),
                       if (_post.caption.isNotEmpty) ...[
                         const SizedBox(height: 12),
